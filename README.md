@@ -52,7 +52,7 @@ On a Wayland session the widget runs through XWayland, because Wayland doesn't l
 - **Look:** *Poster* (the default) matches the Still desktop clock: no panel, bold Barlow lettering, a large faded light-blue number with a °C mark (CPU or GPU temperature, your choice; FPS while you play) and a vertical caption. *Card* is a compact dark panel. Poster comes in Small, Medium and Large.
 - It's a widget, not an app window: it doesn't appear in the taskbar/dock or Alt+Tab, and on KDE Plasma it shows on every virtual desktop.
 - **Stay on top of windows** (on by default, so you can see it over games). Turn it off to have it sit on the desktop behind your windows, like a clock widget.
-- In the menu you can show or hide each section, lock its position, make it **click-through** (clicks pass to the game; turn it off again from the tray), change the background opacity, and start it at sign-in.
+- In the menu you can show or hide each section, lock its position, make it **click-through** (clicks pass to the game; to undo, open Prism Monitor again from the app menu), change the background opacity, and start it at sign-in.
 - `--demo` shows sample readings, `--print` prints one reading to the terminal, and `--smoke-test` checks that it starts.
 
 ## Development

@@ -38,6 +38,9 @@ def run_game(command: list[str]) -> int:
     return 127
 
 
+INSTANCE_NAME = f'prism-monitor-{os.getuid() if hasattr(os, "getuid") else os.environ.get("USERNAME", "user")}'
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog='prism-monitor', description='Fan speed, FPS and Bluetooth battery widget.')
     parser.add_argument('--version', action='version', version=f'Prism Monitor {__version__}')
@@ -74,10 +77,31 @@ def main(argv: list[str] | None = None) -> int:
         state_dir().mkdir(parents=True, exist_ok=True)
         lock = QLockFile(str(state_dir() / 'instance.lock'))
         if not lock.tryLock(100):
-            say('Prism Monitor is already running (look for its tray icon).', error=True)
+            # Already running: tell it to become movable/clickable again (undoes click-through and lock).
+            from PySide6.QtNetwork import QLocalSocket
+            sock = QLocalSocket()
+            sock.connectToServer(INSTANCE_NAME)
+            if sock.waitForConnected(1000):
+                sock.write(b'unlock\n')
+                sock.waitForBytesWritten(1000)
+                sock.disconnectFromServer()
+                say('Prism Monitor is already running; it can be dragged and right-clicked again.')
+            else:
+                say('Prism Monitor is already running (look for its tray icon).', error=True)
             return 0
 
     controller = Controller(app, demo=args.demo)
+    server = None
+    if lock is not None:
+        from PySide6.QtNetwork import QLocalServer
+        QLocalServer.removeServer(INSTANCE_NAME)
+        server = QLocalServer()
+        if server.listen(INSTANCE_NAME):
+            def incoming():
+                while server.hasPendingConnections():
+                    conn = server.nextPendingConnection()
+                    conn.readyRead.connect(lambda c=conn: (c.readAll(), controller.unlock()))
+            server.newConnection.connect(incoming)
     controller.show()
 
     if args.smoke_test:

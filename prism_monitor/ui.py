@@ -534,7 +534,8 @@ class Controller:
         lock = menu.addAction('Lock position', lambda: self.toggle('locked'))
         lock.setCheckable(True)
         lock.setChecked(o.opt('locked', False))
-        through = menu.addAction('Click-through (use the tray icon to undo)', lambda: self.toggle('click_through'))
+        through = menu.addAction('Click-through (undo: open Prism Monitor again from the app menu)',
+                                 lambda: self.toggle('click_through'))
         through.setCheckable(True)
         through.setChecked(o.opt('click_through', False))
         through.setEnabled(self.tray is not None or o.opt('click_through', False))
@@ -558,6 +559,17 @@ class Controller:
         menu.addSeparator()
         menu.addAction(f'Quit Prism Monitor {__version__}', self.app.quit)
         return menu
+
+    def unlock(self):
+        """Make the widget usable again: no click-through, not locked, visible."""
+        self.settings.setValue('click_through', False)
+        self.settings.setValue('locked', False)
+        self.settings.setValue('visible', True)
+        self.overlay.apply_settings()
+        self.overlay.show()
+        if self.tray:
+            self.tray.setContextMenu(self.build_menu())
+        self.message('Prism Monitor', 'You can drag and right-click the widget again.')
 
     def set_option(self, key, value):
         self.settings.setValue(key, value)
