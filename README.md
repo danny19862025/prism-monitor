@@ -49,6 +49,8 @@ On a Wayland session the widget runs through XWayland, because Wayland doesn't l
 ## Using the widget
 
 - Drag the widget to move it. Right-click it, or the tray icon, for the menu.
+- It's a widget, not an app window: it doesn't appear in the taskbar/dock or Alt+Tab.
+- **Stay on top of windows** (on by default, so you can see it over games). Turn it off to have it sit on the desktop behind your windows, like a clock widget.
 - In the menu you can show or hide each section, lock its position, make it **click-through** (clicks pass to the game; turn it off again from the tray), change the background opacity, and start it at sign-in.
 - `--demo` shows sample readings, `--print` prints one reading to the terminal, and `--smoke-test` checks that it starts.
 

@@ -242,6 +242,9 @@ class Overlay(QWidget):
             return default
 
     def apply_settings(self):
+        on_top = self.opt('on_top', True)
+        self.setWindowFlag(Qt.WindowStaysOnTopHint, on_top)
+        self.setWindowFlag(Qt.WindowStaysOnBottomHint, not on_top)
         self.setWindowFlag(Qt.WindowTransparentForInput, self.opt('click_through', False))
         self.update()
 
@@ -318,6 +321,13 @@ class Overlay(QWidget):
         super().moveEvent(event)
         if self.isVisible():
             self.settings.setValue('pos', self.pos())
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        if LINUX and QApplication.platformName() == 'xcb':
+            # behave like a desktop widget: keep out of the dock/taskbar, pager and Alt+Tab
+            from .x11 import set_states
+            QTimer.singleShot(150, lambda: set_states(int(self.winId()), ['SKIP_TASKBAR', 'SKIP_PAGER']))
 
     def contextMenuEvent(self, event):
         self.menu_factory().exec(event.globalPos())
@@ -428,6 +438,9 @@ class Controller:
         tips.setCheckable(True)
         tips.setChecked(o.opt('show_tips', False))
         menu.addSeparator()
+        top = menu.addAction('Stay on top of windows (off: sit on the desktop)', lambda: self.toggle('on_top', True))
+        top.setCheckable(True)
+        top.setChecked(o.opt('on_top', True))
         lock = menu.addAction('Lock position', lambda: self.toggle('locked'))
         lock.setCheckable(True)
         lock.setChecked(o.opt('locked', False))
