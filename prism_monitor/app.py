@@ -25,7 +25,8 @@ def run_game(command: list[str]) -> int:
     folder.mkdir(parents=True, exist_ok=True)
     extra = f'output_folder={folder},autostart_log=1,log_interval=250'
     if os.environ.get('PRISM_MONITOR_HUD') != '1':
-        extra += ',no_display'
+        # MangoHud stops logging when its HUD is off (no_display), so draw it fully transparent
+        extra += ',fps_only,alpha=0,background_alpha=0'
     current = os.environ.get('MANGOHUD_CONFIG')
     os.environ['MANGOHUD_CONFIG'] = f'{current},{extra}' if current else extra
     os.environ['MANGOHUD'] = '1'

@@ -39,7 +39,7 @@ sudo pacman -S mangohud lib32-mangohud  # only needed for FPS
 Running from source: `scripts/install-linux.sh` does the same thing using a `.venv` in this folder.
 
 **FPS:** start each game through `prism-monitor-run`. For Steam games, open the game's Properties and set
-**Launch options** to `prism-monitor-run %command%`. It turns on MangoHud logging, hides MangoHud's own HUD (set
+**Launch options** to `prism-monitor-run %command%`. It turns on MangoHud logging, makes MangoHud's own HUD invisible (MangoHud stops logging if the HUD is switched off; set
 `PRISM_MONITOR_HUD=1` to keep the HUD) and Prism Monitor reads the live log.
 
 On a Wayland session the widget runs through XWayland, because Wayland doesn't let apps keep themselves on top or remember where their window was.
