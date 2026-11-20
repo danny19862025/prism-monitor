@@ -30,6 +30,24 @@ def fps_color(fps: float) -> str:
     return GOOD if fps >= 55 else WARN if fps >= 30 else BAD
 
 
+def temp_color(temp: float | None) -> str:
+    if temp is None:
+        return ACCENT
+    return GOOD if temp < 70 else WARN if temp < 85 else BAD
+
+
+def chip_text(chip) -> str:
+    parts = []
+    if chip.load is not None:
+        parts.append(f'{chip.load:.0f}%')
+    if chip.temp is not None:
+        parts.append(f'{chip.temp:.0f}°C')
+    return '  ·  '.join(parts) or '—'
+
+
+DEFAULT_OPACITY = 92
+
+
 def make_icon() -> QIcon:
     pix = QPixmap(64, 64)
     pix.fill(Qt.transparent)
@@ -89,7 +107,7 @@ class Section(QWidget):
         self.box = QVBoxLayout(self)
         self.box.setContentsMargins(0, 0, 0, 0)
         self.box.setSpacing(3)
-        self.title = label(title.upper(), 7.5, MUTED, True)
+        self.title = label(title.upper(), 8, ACCENT, True)
         self.box.addWidget(self.title)
         self.note = label('', 8.5, MUTED)
         self.note.setWordWrap(True)
@@ -126,9 +144,9 @@ class RowSection(Section):
                     item.widget().deleteLater()
             self.rows = []
             for i, name in enumerate(names):
-                n = label(name, 9.5, TEXT)
+                n = label(name, 10, TEXT)
                 n.setMaximumWidth(200)
-                v = label('', 9.5, TEXT, True)
+                v = label('', 10, TEXT, True)
                 v.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
                 self.grid.addWidget(n, i, 0)
                 col = 1
@@ -200,9 +218,10 @@ class Overlay(QWidget):
         box.setContentsMargins(14, 12, 14, 12)
         box.setSpacing(10)
         self.fps = FpsSection()
+        self.system = RowSection('System')
         self.fans = RowSection('Fans')
         self.batteries = RowSection('Bluetooth battery', with_bar=True)
-        for w in (self.fps, self.fans, self.batteries):
+        for w in (self.fps, self.system, self.fans, self.batteries):
             box.addWidget(w)
         self.setMinimumWidth(230)
         self.apply_settings()
@@ -223,9 +242,6 @@ class Overlay(QWidget):
             return default
 
     def apply_settings(self):
-        self.fps.setVisible(self.opt('show/fps', True))
-        self.fans.setVisible(self.opt('show/fans', True))
-        self.batteries.setVisible(self.opt('show/batteries', True))
         self.setWindowFlag(Qt.WindowTransparentForInput, self.opt('click_through', False))
         self.update()
 
@@ -241,21 +257,43 @@ class Overlay(QWidget):
     # data ----------------------------------------------------------------
     def refresh(self):
         snap: Snapshot = self.collector.snapshot()
+        tips = self.opt('show_tips', False)
+
+        def place(section, key, has_data, note_key):
+            section.setVisible(self.opt(key, True) and (has_data or tips))
+            section.set_note(snap.notes.get(note_key) if tips or not has_data else None)
+
         self.fps.set_fps(snap.fps)
-        self.fps.set_note(snap.notes.get('fps') if snap.fps is None else None)
+        place(self.fps, 'show/fps', snap.fps is not None, 'fps')
+
+        rows = []
+        if snap.cpu is not None and snap.cpu.has_data():
+            rows.append(('CPU', chip_text(snap.cpu), None, temp_color(snap.cpu.temp)))
+        if snap.gpu is not None and snap.gpu.has_data():
+            rows.append(('GPU', chip_text(snap.gpu), None, temp_color(snap.gpu.temp)))
+        if snap.memory is not None:
+            m = snap.memory
+            rows.append(('Memory', f'{m.used_gb:.1f} / {m.total_gb:.0f} GB', None,
+                         WARN if m.percent >= 90 else ACCENT))
+        self.system.set_rows(rows)
+        if snap.gpu is not None and self.system.rows and len(rows) > 1 and rows[1][0] == 'GPU':
+            self.system.rows[1][0].setToolTip(snap.gpu.name)
+        self.system.setVisible(self.opt('show/system', True) and bool(rows))
+        self.system.set_note(snap.notes.get('system') if tips else None)
+
         self.fans.set_rows([(f.name, f.text(), None, ACCENT) for f in snap.fans])
-        self.fans.set_note(snap.notes.get('fans'))
+        place(self.fans, 'show/fans', bool(snap.fans), 'fans')
         self.batteries.set_rows([(b.name, b.text(), b.percent, battery_color(b.percent)) for b in snap.batteries])
-        self.batteries.set_note(snap.notes.get('batteries'))
+        place(self.batteries, 'show/batteries', bool(snap.batteries), 'batteries')
         self.adjustSize()
 
     # painting / moving -----------------------------------------------------
     def paintEvent(self, _):
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing)
-        alpha = max(40, min(255, int(255 * self.opt('opacity', 85) / 100)))
-        p.setPen(QPen(QColor(255, 255, 255, 28), 1))
-        p.setBrush(QColor(16, 22, 30, alpha))
+        alpha = max(40, min(255, int(255 * self.opt('opacity', DEFAULT_OPACITY) / 100)))
+        p.setPen(QPen(QColor(124, 199, 255, 70), 1))
+        p.setBrush(QColor(12, 16, 22, alpha))
         p.drawRoundedRect(QRectF(self.rect()).adjusted(0.5, 0.5, -0.5, -0.5), 12, 12)
 
     def mousePressEvent(self, event):
@@ -378,11 +416,14 @@ class Controller:
         o = self.overlay
         menu.addAction('Hide widget' if o.isVisible() else 'Show widget', self.toggle_visible)
         menu.addSeparator()
-        for key, text in (('show/fps', 'Show FPS'), ('show/fans', 'Show fans'),
-                          ('show/batteries', 'Show Bluetooth battery')):
+        for key, text in (('show/fps', 'Show FPS'), ('show/system', 'Show CPU / GPU / memory'),
+                          ('show/fans', 'Show fans'), ('show/batteries', 'Show Bluetooth battery')):
             a = menu.addAction(text, lambda k=key: self.toggle(k, True))
             a.setCheckable(True)
             a.setChecked(o.opt(key, True))
+        tips = menu.addAction('Show tips for empty sections', lambda: self.toggle('show_tips'))
+        tips.setCheckable(True)
+        tips.setChecked(o.opt('show_tips', False))
         menu.addSeparator()
         lock = menu.addAction('Lock position', lambda: self.toggle('locked'))
         lock.setCheckable(True)
@@ -393,9 +434,9 @@ class Controller:
         through.setEnabled(self.tray is not None or o.opt('click_through', False))
         opacity = menu.addMenu('Background opacity')
         group = QActionGroup(opacity)
-        for value in (40, 60, 85, 100):
+        for value in (60, 80, DEFAULT_OPACITY, 100):
             a = QAction(f'{value}%', opacity, checkable=True)
-            a.setChecked(o.opt('opacity', 85) == value)
+            a.setChecked(o.opt('opacity', DEFAULT_OPACITY) == value)
             a.triggered.connect(lambda _=False, v=value: self.set_opacity(v))
             group.addAction(a)
             opacity.addAction(a)

@@ -9,12 +9,11 @@ Both: NVIDIA GPU fan duty through `nvidia-smi`.
 from __future__ import annotations
 
 import json
-import shutil
 import urllib.request
 from pathlib import Path
 
 from .model import Fan
-from .util import run, WINDOWS
+from .util import WINDOWS
 
 HWMON = Path('/sys/class/hwmon')
 
@@ -57,39 +56,15 @@ def hwmon_fans(root: Path = HWMON) -> list[Fan]:
     return fans
 
 
-def parse_nvidia_smi(text: str) -> list[Fan]:
+def nvidia_fans(gpus) -> list[Fan]:
+    """Fan rows from system.NvidiaSmi readings (NVIDIA reports duty %, not RPM)."""
     fans = []
-    lines = [line for line in text.splitlines() if line.strip()]
-    for i, line in enumerate(lines):
-        parts = [p.strip() for p in line.split(',')]
-        if len(parts) < 2:
+    for i, gpu in enumerate(gpus):
+        if gpu.fan_percent is None:  # passively cooled or laptop GPUs report N/A
             continue
-        name, speed = parts[0], parts[1].rstrip('%').strip()
-        try:
-            percent = float(speed)
-        except ValueError:  # "[N/A]" on passively cooled or fanless cards
-            continue
-        label = f'{name} fan' if len(lines) == 1 else f'{name} #{i} fan'
-        fans.append(Fan(name=label, percent=percent, source='nvidia-smi'))
+        label = f'{gpu.name} fan' if len(gpus) == 1 else f'{gpu.name} #{i} fan'
+        fans.append(Fan(name=label, percent=gpu.fan_percent, source='nvidia-smi'))
     return fans
-
-
-class NvidiaFans:
-    """Polls nvidia-smi; gives up quietly after it fails (no driver, no GPU)."""
-
-    def __init__(self):
-        self.exe = shutil.which('nvidia-smi')
-        self.failures = 0
-
-    def read(self) -> list[Fan]:
-        if not self.exe or self.failures >= 3:
-            return []
-        out = run([self.exe, '--query-gpu=name,fan.speed', '--format=csv,noheader'], timeout=4)
-        if out is None:
-            self.failures += 1
-            return []
-        self.failures = 0
-        return parse_nvidia_smi(out)
 
 
 def parse_lhm_tree(data: dict) -> list[Fan]:

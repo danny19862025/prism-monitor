@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from prism_monitor import battery, fans, fps, windows_helper
+from prism_monitor import battery, fans, fps, system, windows_helper
 
 
 def write(path: Path, text: str):
@@ -28,9 +28,10 @@ class FanTests(unittest.TestCase):
         self.assertEqual(got, [('CPU Fan', 1200), ('nct6798 fan 2', 800), ('GPU fan', 0)])
 
     def test_nvidia_smi(self):
-        got = fans.parse_nvidia_smi('NVIDIA GeForce RTX 4070, 41 %\n')
-        self.assertEqual((got[0].name, got[0].percent, got[0].text()), ('NVIDIA GeForce RTX 4070 fan', 41.0, '41%'))
-        self.assertEqual(fans.parse_nvidia_smi('Laptop GPU, [N/A]\n'), [])
+        gpus = system.parse_nvidia_smi('NVIDIA GeForce RTX 4070, 41, 63, 97\nLaptop GPU, [N/A], 50, 3\n')
+        self.assertEqual((gpus[0].temp, gpus[0].load, gpus[1].fan_percent), (63.0, 97.0, None))
+        got = fans.nvidia_fans(gpus)
+        self.assertEqual([(f.name, f.text()) for f in got], [('NVIDIA GeForce RTX 4070 #0 fan', '41%')])
 
     def test_lhm_tree(self):
         tree = {'Text': 'Sensor', 'Children': [{'Text': 'PC', 'Children': [
@@ -43,6 +44,61 @@ class FanTests(unittest.TestCase):
         got = [(f.name, f.rpm) for f in fans.parse_lhm_tree(tree)]
         self.assertEqual(got, [('ASUS PRIME B650 · Fan #1', 1034), ('ASUS PRIME B650 · Fan #2', 0),
                                ('NVIDIA RTX · GPU Fan 1', 1500)])
+
+
+class SystemTests(unittest.TestCase):
+    def test_cpu_temp_prefers_package(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write(root / 'hwmon0/name', 'acpitz')
+            write(root / 'hwmon0/temp1_input', '26800')
+            write(root / 'hwmon1/name', 'coretemp')
+            write(root / 'hwmon1/temp1_input', '52000')
+            write(root / 'hwmon1/temp1_label', 'Package id 0')
+            write(root / 'hwmon1/temp2_input', '58000')
+            write(root / 'hwmon1/temp2_label', 'Core 0')
+            self.assertEqual(system.linux_cpu_temp(root, root / 'none'), 52.0)
+            write(root / 'hwmon2/name', 'k10temp')  # AMD: Tctl
+            write(root / 'hwmon2/temp1_input', '61250')
+            write(root / 'hwmon2/temp1_label', 'Tctl')
+            (root / 'hwmon1/name').write_text('x')
+            self.assertEqual(system.linux_cpu_temp(root, root / 'none'), 61.25)
+
+    def test_amdgpu(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write(root / 'hwmon3/name', 'amdgpu')
+            write(root / 'hwmon3/temp1_input', '55000')
+            write(root / 'hwmon3/temp1_label', 'edge')
+            write(root / 'hwmon3/temp2_input', '70000')
+            write(root / 'hwmon3/temp2_label', 'junction')
+            write(root / 'hwmon3/device/gpu_busy_percent', '87')
+            gpu = system.linux_gpu(root)
+        self.assertEqual((gpu.temp, gpu.load), (55.0, 87.0))
+
+    def test_meminfo(self):
+        m = system.parse_meminfo('MemTotal:       16000000 kB\nMemFree: 1 kB\nMemAvailable:    4000000 kB\n')
+        self.assertAlmostEqual(m.percent, 75.0)
+
+    def test_cpu_load_runs(self):
+        load = system.CpuLoad()
+        load.read()
+        sum(range(200000))
+        value = load.read()
+        self.assertTrue(value is None or 0 <= value <= 100)
+
+    def test_lhm_chips(self):
+        tree = {'Children': [{'Text': 'PC', 'Children': [
+            {'Text': 'AMD Ryzen 7 7800X3D', 'ImageURL': 'images_icon/cpu.png', 'Children': [
+                {'Text': 'Temperatures', 'Children': [{'Text': 'Core (Tctl/Tdie)', 'Value': '67,5 °C'}]},
+                {'Text': 'Load', 'Children': [{'Text': 'CPU Total', 'Value': '23.1 %'}]}]},
+            {'Text': 'NVIDIA GeForce RTX 4080', 'ImageURL': 'images_icon/nvidia.png', 'Children': [
+                {'Text': 'Temperatures', 'Children': [{'Text': 'GPU Hot Spot', 'Value': '80 °C'},
+                                                      {'Text': 'GPU Core', 'Value': '70 °C'}]},
+                {'Text': 'Load', 'Children': [{'Text': 'GPU Core', 'Value': '99 %'}]}]}]}]}
+        cpu, gpu = system.parse_lhm_chips(tree)
+        self.assertEqual((cpu.temp, cpu.load), (67.5, 23.1))
+        self.assertEqual((gpu.name, gpu.temp, gpu.load), ('NVIDIA GeForce RTX 4080', 70.0, 99.0))
 
 
 class BatteryTests(unittest.TestCase):
@@ -143,6 +199,13 @@ class WindowsHelperTests(unittest.TestCase):
         f, lhm, b = windows_helper.parse_message(json.dumps({'fans': [], 'lhm': False, 'batteries': None}))
         self.assertEqual((f, lhm, b), ([], False, None))
         self.assertIsNone(windows_helper.parse_message('garbage'))
+
+    def test_parse_chips(self):
+        cpu, gpu = windows_helper.parse_chips({'cpu': {'name': 'Intel Core i7', 'temps': {'CPU Package': 61, 'Core #1': 58},
+                                                       'loads': {'CPU Total': 12.5}},
+                                               'gpu': {'name': 'Radeon', 'temps': {}, 'loads': {}}})
+        self.assertEqual((cpu.temp, cpu.load, gpu), (61.0, 12.5, None))
+        self.assertEqual(windows_helper.parse_chips(None), (None, None))
 
     def test_script_is_encoded(self):
         import base64

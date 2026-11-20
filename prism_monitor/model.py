@@ -45,4 +45,7 @@ class Snapshot:
     fans: list[Fan] = field(default_factory=list)
     batteries: list[Battery] = field(default_factory=list)
     fps: Fps | None = None
+    cpu: object | None = None      # system.Chip
+    gpu: object | None = None      # system.Chip
+    memory: object | None = None   # system.Memory
     notes: dict[str, str] = field(default_factory=dict)  # section -> why it is empty
