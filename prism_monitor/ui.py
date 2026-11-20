@@ -325,9 +325,11 @@ class Overlay(QWidget):
     def showEvent(self, event):
         super().showEvent(event)
         if LINUX and QApplication.platformName() == 'xcb':
-            # behave like a desktop widget: keep out of the dock/taskbar, pager and Alt+Tab
-            from .x11 import set_states
-            QTimer.singleShot(150, lambda: set_states(int(self.winId()), ['SKIP_TASKBAR', 'SKIP_PAGER']))
+            # behave like a desktop widget: keep out of the dock/taskbar, pager and Alt+Tab; show on every virtual desktop
+            from .x11 import set_states, show_on_all_desktops
+            wid = int(self.winId())
+            QTimer.singleShot(150, lambda: (set_states(wid, ['SKIP_TASKBAR', 'SKIP_PAGER']),
+                                            show_on_all_desktops(wid)))
 
     def contextMenuEvent(self, event):
         self.menu_factory().exec(event.globalPos())

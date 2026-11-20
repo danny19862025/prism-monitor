@@ -75,3 +75,26 @@ def set_states(window_id: int, add: list[str], remove: list[str] = ()) -> bool:
         return True
     finally:
         lib.XCloseDisplay(display)
+
+
+def show_on_all_desktops(window_id: int) -> bool:
+    """Ask the window manager to show the window on every virtual desktop (_NET_WM_DESKTOP = all)."""
+    lib = _x11()
+    if not lib:
+        return False
+    display = lib.XOpenDisplay(None)
+    if not display:
+        return False
+    try:
+        event = _Event()
+        msg = event.xclient
+        msg.type, msg.send_event, msg.display = CLIENT_MESSAGE, 1, display
+        msg.window, msg.format = window_id, 32
+        msg.message_type = lib.XInternAtom(display, b'_NET_WM_DESKTOP', 0)
+        msg.data[0] = 0xFFFFFFFF
+        msg.data[1] = 1
+        lib.XSendEvent(display, lib.XDefaultRootWindow(display), 0, SUBSTRUCTURE, ctypes.byref(event))
+        lib.XFlush(display)
+        return True
+    finally:
+        lib.XCloseDisplay(display)
