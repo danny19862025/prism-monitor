@@ -390,6 +390,10 @@ class Overlay(QWidget):
             wid = int(self.winId())
             QTimer.singleShot(150, lambda: (set_states(wid, ['SKIP_TASKBAR', 'SKIP_PAGER']),
                                             show_on_all_desktops(wid)))
+        if LINUX:
+            # KDE (Wayland or X11): KWin itself puts it on every virtual desktop
+            from .kde import make_widget_like
+            QTimer.singleShot(400, make_widget_like)
 
     def contextMenuEvent(self, event):
         self.menu_factory().exec(event.globalPos())
