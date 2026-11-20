@@ -23,7 +23,10 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
       - name: Read live sensors once
-        run: python main.py --print
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = Windows ]; then python tools/fetch_presentmon.py; fi
+          python main.py --print
       - run: python build.py
       - name: Smoke test the packaged app
         shell: python

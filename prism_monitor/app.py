@@ -103,6 +103,9 @@ def print_once(demo: bool) -> int:
     c = Collector(demo=demo)
     c.start()
     time.sleep(3)
+    deadline = time.monotonic() + 30  # PowerShell's first Bluetooth scan can be slow
+    while c.helper and not c.helper.ready and time.monotonic() < deadline:
+        time.sleep(0.5)
     snap = c.snapshot()
     c.stop()
     print('Fans:')
