@@ -315,22 +315,30 @@ class Overlay(QWidget):
         show = lambda key: self.opt(key, True)  # noqa: E731
         fps = snap.fps if show('show/fps') else None
         sys_rows = []
+
+        def chip_row(label, chip):
+            if chip is not None and chip.has_data():
+                sys_rows.append(P.Row(label, chip_text(chip).replace('  ·  ', ' · '), P.temp_color(chip.temp)))
+
+        has_gpu = gpu is not None and gpu.has_data()
         if fps:
             name = fps.app.removesuffix('.exe').upper()
-            hero = (f'{fps.fps:.0f}', 'FPS', f'{name[:18]}  ·  {fps.frametime_ms:.1f} MS')
+            hero = (f'{fps.fps:.0f}', '', 'FPS', f'{name[:18]}  ·  {fps.frametime_ms:.1f} MS')
             caption = 'GAMING'
-            if cpu is not None and cpu.has_data():
-                sys_rows.append(P.Row('CPU', chip_text(cpu).replace('  ·  ', ' · '), P.temp_color(cpu.temp)))
-        elif cpu is not None and cpu.temp is not None:
-            load = f'{cpu.load:.0f}% LOAD  ·  ' if cpu.load is not None else ''
-            hero = (f'{cpu.temp:.0f}', 'CPU', f'{load}{cpu.temp:.0f}°C')
-            caption = 'MONITOR'
+            chip_row('CPU', cpu)
+            chip_row('GPU', gpu)
         else:
-            load = cpu.load if cpu is not None and cpu.load is not None else 0
-            hero = (f'{load:.0f}', 'CPU', 'LOAD  %')
             caption = 'MONITOR'
-        if gpu is not None and gpu.has_data():
-            sys_rows.append(P.Row('GPU', chip_text(gpu).replace('  ·  ', ' · '), P.temp_color(gpu.temp)))
+            # the big number follows the user's choice; GPU falls back to CPU when there is no GPU sensor
+            use_gpu = self.opt('hero', 'cpu') == 'gpu' and has_gpu
+            chip, label = (gpu, 'GPU') if use_gpu else (cpu, 'CPU')
+            if chip is not None and chip.temp is not None:
+                load = f'{chip.load:.0f}% LOAD' if chip.load is not None else ''
+                hero = (f'{chip.temp:.0f}', '°C', label, load)
+            else:
+                load = chip.load if chip is not None and chip.load is not None else 0
+                hero = (f'{load:.0f}', '%', label, 'LOAD')
+            chip_row('GPU', gpu) if not use_gpu else chip_row('CPU', cpu)
         if mem is not None:
             sys_rows.append(P.Row('MEMORY', f'{mem.used_gb:.1f} / {mem.total_gb:.0f} GB',
                                   P.WARN if mem.percent >= 90 else P.TEXT))
@@ -509,6 +517,11 @@ class Controller:
             a = look.addAction(text, lambda k=key: self.set_option('style', k))
             a.setCheckable(True)
             a.setChecked(o.opt('style', 'poster') == key)
+        big = menu.addMenu('Big number (Poster look)')
+        for key, text in (('cpu', 'CPU temperature'), ('gpu', 'GPU temperature (CPU if no GPU sensor)')):
+            a = big.addAction(text, lambda k=key: self.set_option('hero', k))
+            a.setCheckable(True)
+            a.setChecked(o.opt('hero', 'cpu') == key)
         size = menu.addMenu('Size (Poster look)')
         for key in ('small', 'medium', 'large'):
             a = size.addAction(key.title(), lambda k=key: self.set_option('size', k))

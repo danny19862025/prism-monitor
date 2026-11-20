@@ -38,7 +38,7 @@ class OverlayTests(unittest.TestCase):
         overlay.refresh()
         self.assertTrue(overlay.poster.isVisibleTo(overlay))
         self.assertFalse(overlay.fans.isVisibleTo(overlay))
-        self.assertEqual(overlay.poster.hero[1], 'FPS')
+        self.assertEqual(overlay.poster.hero[2], 'FPS')
         self.assertEqual([g.caption for g in overlay.poster.groups], ['SYSTEM', 'FANS', 'BLUETOOTH'])
         self.assertGreater(overlay.poster.width(), 200)
         settings.clear()

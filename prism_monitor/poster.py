@@ -77,7 +77,7 @@ class PosterView(QWidget):
         super().__init__()
         load_fonts()
         self.scale = 1.0
-        self.hero: tuple[str, str, str] = ('', '', '')  # number, headline, subline
+        self.hero: tuple[str, str, str, str] = ('', '', '', '')  # number, unit, headline, subline
         self.caption = 'SYSTEM'
         self.groups: list[Group] = []
         self.setAttribute(Qt.WA_TranslucentBackground)
@@ -109,7 +109,7 @@ class PosterView(QWidget):
     def _layout(self, p: QPainter | None) -> QSize:
         m = 46.0 * self.scale  # Still's "main size"
         pad = 10 * self.scale
-        number, headline, subline = self.hero
+        number, unit, headline, subline = self.hero
 
         num_font = font(m * 2.2, QFont.Bold)  # background number: smaller than Still's, sits right of the headline start
         num_fm = QFontMetricsF(num_font)
@@ -124,7 +124,7 @@ class PosterView(QWidget):
         cap_col = cap_fm.height() + m * .22
 
         y = pad
-        num_x = pad + cap_col + m * 1.1  # shifted right, behind the headline
+        num_x = pad + cap_col + m * 1.7  # shifted right, behind the end of the headline
         head_font = font(m * .72, QFont.Bold)
         head_fm = QFontMetricsF(head_font)
         head_ink = head_fm.tightBoundingRect('M')
@@ -140,7 +140,10 @@ class PosterView(QWidget):
         line_y = sub_cap + sub_ink.height() + m * .2
         line_w = max(m * 1.1, sub_fm.horizontalAdvance(subline) * .9)
 
-        width = max(num_x + num_w, head_x + head_fm.horizontalAdvance(headline),
+        unit_font = font(m * .62, QFont.Bold)
+        unit_fm = QFontMetricsF(unit_font)
+        unit_x = num_x + num_w + m * .06
+        width = max(num_x + num_w + (unit_fm.horizontalAdvance(unit) + m * .06 if unit else 0), head_x + head_fm.horizontalAdvance(headline),
                     head_x + sub_fm.horizontalAdvance(subline), head_x + line_w)
         hero_bottom = max(y + num_h, y + cap_len, line_y + 2 * self.scale)
 
@@ -152,7 +155,13 @@ class PosterView(QWidget):
             grad.setColorAt(1, alpha(ACCENT, 28 / 255))
             p.setFont(num_font)
             p.setPen(QPen(grad, 0))
-            p.drawText(QPointF(num_x + (num_w - num_fm.horizontalAdvance(number)) / 2, y - num_top), number)
+            number_w = num_fm.horizontalAdvance(number)
+            p.drawText(QPointF(num_x + (num_w - number_w) / 2, y - num_top), number)
+            if unit:  # unit sits at the top right of the number, like a superscript
+                unit_x = num_x + (num_w + number_w) / 2 + m * .06
+                p.setFont(unit_font)
+                p.setPen(alpha(ACCENT, .95))
+                p.drawText(QPointF(unit_x, y - unit_fm.tightBoundingRect('C').top()), unit)
             # vertical caption, reading bottom to top
             p.save()
             p.translate(pad + cap_fm.ascent(), y + max(num_h, cap_len))
