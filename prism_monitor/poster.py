@@ -111,7 +111,7 @@ class PosterView(QWidget):
         pad = 10 * self.scale
         number, headline, subline = self.hero
 
-        num_font = font(m * 3.0, QFont.Bold)
+        num_font = font(m * 2.2, QFont.Bold)  # background number: smaller than Still's, sits right of the headline start
         num_fm = QFontMetricsF(num_font)
         ink = num_fm.tightBoundingRect('8')
         num_top, num_h = ink.top(), ink.height()
@@ -124,12 +124,12 @@ class PosterView(QWidget):
         cap_col = cap_fm.height() + m * .22
 
         y = pad
-        num_x = pad + cap_col
+        num_x = pad + cap_col + m * 1.1  # shifted right, behind the headline
         head_font = font(m * .72, QFont.Bold)
         head_fm = QFontMetricsF(head_font)
         head_ink = head_fm.tightBoundingRect('M')
-        head_x = num_x + num_w * .24
-        head_cap = y + num_h * .4
+        head_x = pad + cap_col + m * .3
+        head_cap = y + num_h * .38
         head_base = head_cap - head_ink.top()
 
         sub_font = font(max(11.0, m * .3), QFont.Bold, 1.2 * self.scale)
