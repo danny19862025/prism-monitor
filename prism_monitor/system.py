@@ -32,6 +32,8 @@ class Chip:
 class Memory:
     used_gb: float
     total_gb: float
+    swap_used_gb: float | None = None   # Linux only; None when there is no swap
+    swap_total_gb: float | None = None
 
     @property
     def percent(self) -> float:
@@ -88,7 +90,12 @@ def parse_meminfo(text: str) -> Memory | None:
     if not total or available is None:
         return None
     gib = 1024 * 1024
-    return Memory(used_gb=(total - available) / gib, total_gb=total / gib)
+    memory = Memory(used_gb=(total - available) / gib, total_gb=total / gib)
+    swap_total, swap_free = values.get('SwapTotal', 0), values.get('SwapFree', 0)
+    if swap_total:
+        memory.swap_used_gb = (swap_total - swap_free) / gib
+        memory.swap_total_gb = swap_total / gib
+    return memory
 
 
 def memory() -> Memory | None:

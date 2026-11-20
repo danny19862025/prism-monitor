@@ -275,6 +275,9 @@ class Overlay(QWidget):
             m = snap.memory
             rows.append(('Memory', f'{m.used_gb:.1f} / {m.total_gb:.0f} GB', None,
                          WARN if m.percent >= 90 else ACCENT))
+            if m.swap_total_gb:
+                rows.append(('Swap', f'{m.swap_used_gb:.1f} / {m.swap_total_gb:.0f} GB', None,
+                             WARN if m.swap_used_gb / m.swap_total_gb >= 0.5 else ACCENT))
         self.system.set_rows(rows)
         if snap.gpu is not None and self.system.rows and len(rows) > 1 and rows[1][0] == 'GPU':
             self.system.rows[1][0].setToolTip(snap.gpu.name)

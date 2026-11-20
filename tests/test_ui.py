@@ -25,7 +25,7 @@ class OverlayTests(unittest.TestCase):
         self.assertEqual(len(overlay.batteries.rows), 3)
         self.assertTrue(overlay.fps.line.isVisibleTo(overlay))
         self.assertTrue(overlay.batteries.rows[2][1].text().endswith('%'))
-        self.assertEqual([r[0].text() for r in overlay.system.rows], ['CPU', 'GPU', 'Memory'])
+        self.assertEqual([r[0].text() for r in overlay.system.rows], ['CPU', 'GPU', 'Memory', 'Swap'])
         self.assertIn('°C', overlay.system.rows[0][1].text())
         settings.clear()
 

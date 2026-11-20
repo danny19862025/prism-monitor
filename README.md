@@ -14,7 +14,7 @@ It is a separate companion app to [prism-light](https://github.com/danny19862025
 | **Fans** | [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor) while it is running (Windows has no built-in fan API), plus NVIDIA GPU fan % via `nvidia-smi` | Kernel `hwmon` (board chips, laptop EC drivers such as `hp`/`thinkpad`/`dell-smm`, AMD GPUs), plus `nvidia-smi` |
 | **FPS** | Bundled Intel [PresentMon](https://github.com/GameTechDev/PresentMon): works for any DirectX/Vulkan/OpenGL game, and shows the game in the foreground | [MangoHud](https://github.com/flightlessmango/MangoHud) logging, for games started with `prism-monitor-run` |
 | **CPU / GPU** | Usage from Windows. Temperatures from LibreHardwareMonitor, plus NVIDIA via `nvidia-smi` | `/proc/stat`, and temperatures from hwmon (`coretemp`, `k10temp`, `zenpower`, `amdgpu`, `nouveau`) plus `nvidia-smi`. Intel integrated graphics report no temperature, so they show no GPU row |
-| **Memory** | Windows memory status | `/proc/meminfo` |
+| **Memory** | Windows memory status | `/proc/meminfo`, plus a Swap row when swap is set up |
 | **Bluetooth battery** | The same battery value that Settings › Bluetooth shows | BlueZ (`org.bluez.Battery1`), kernel HID batteries (Logitech, DualSense, Xbox via xpadneo…), and UPower as a fallback |
 
 Sections with nothing to show are hidden. For example, FPS appears only while a game is running. To see why a section is empty, right-click the widget and turn on **Show tips for empty sections**.

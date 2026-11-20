@@ -79,6 +79,10 @@ class SystemTests(unittest.TestCase):
     def test_meminfo(self):
         m = system.parse_meminfo('MemTotal:       16000000 kB\nMemFree: 1 kB\nMemAvailable:    4000000 kB\n')
         self.assertAlmostEqual(m.percent, 75.0)
+        self.assertIsNone(m.swap_total_gb)
+        m = system.parse_meminfo('MemTotal: 16777216 kB\nMemAvailable: 8388608 kB\n'
+                                 'SwapTotal: 8388608 kB\nSwapFree: 7340032 kB\n')
+        self.assertEqual((m.swap_used_gb, m.swap_total_gb), (1.0, 8.0))
 
     def test_cpu_load_runs(self):
         load = system.CpuLoad()

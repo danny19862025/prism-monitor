@@ -164,5 +164,5 @@ def demo_snapshot() -> Snapshot:
         fps=Fps('Demo game', fps=143 + 4 * wobble, frametime_ms=1000 / (143 + 4 * wobble), low_1pct=118),
         cpu=system.Chip('CPU', 64 + 3 * wobble, 38 + 10 * wobble),
         gpu=system.Chip('NVIDIA GeForce RTX 4070', 71 + 2 * wobble, 92),
-        memory=system.Memory(9.4, 31.9),
+        memory=system.Memory(9.4, 31.9, 0.2, 8.0),
     )
