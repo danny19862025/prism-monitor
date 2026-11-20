@@ -18,6 +18,7 @@ class OverlayTests(unittest.TestCase):
     def test_demo_rows(self):
         settings = QSettings('PrismMonitorTests', 'PrismMonitorTests')
         settings.clear()
+        settings.setValue('style', 'card')
         overlay = Overlay(Collector(demo=True), settings)
         overlay.menu_factory = lambda: None
         overlay.refresh()
@@ -27,6 +28,19 @@ class OverlayTests(unittest.TestCase):
         self.assertTrue(overlay.batteries.rows[2][1].text().endswith('%'))
         self.assertEqual([r[0].text() for r in overlay.system.rows], ['CPU', 'GPU', 'Memory', 'Swap'])
         self.assertIn('°C', overlay.system.rows[0][1].text())
+        settings.clear()
+
+    def test_poster_look(self):
+        settings = QSettings('PrismMonitorTests', 'PrismMonitorTests')
+        settings.clear()
+        overlay = Overlay(Collector(demo=True), settings)
+        overlay.menu_factory = lambda: None
+        overlay.refresh()
+        self.assertTrue(overlay.poster.isVisibleTo(overlay))
+        self.assertFalse(overlay.fans.isVisibleTo(overlay))
+        self.assertEqual(overlay.poster.hero[1], 'FPS')
+        self.assertEqual([g.caption for g in overlay.poster.groups], ['SYSTEM', 'FANS', 'BLUETOOTH'])
+        self.assertGreater(overlay.poster.width(), 200)
         settings.clear()
 
 

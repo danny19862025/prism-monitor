@@ -1,6 +1,7 @@
 """Build a portable folder + ZIP for the OS this runs on (Windows or Linux)."""
 from importlib.metadata import distributions
 from pathlib import Path
+import os
 import shutil
 import subprocess
 import sys
@@ -10,6 +11,7 @@ windows = sys.platform == 'win32'
 if windows:
     subprocess.run([sys.executable, str(root / 'tools' / 'fetch_presentmon.py')], cwd=root, check=True)
 subprocess.run([sys.executable, '-m', 'PyInstaller', '--noconfirm', '--clean', '--onedir', '--windowed',
+                '--add-data', f"{root / 'prism_monitor' / 'fonts'}{os.pathsep}prism_monitor/fonts",
                 '--name', 'PrismMonitor', str(root / 'main.py')], cwd=root, check=True)
 bundle = root / 'dist' / 'PrismMonitor'
 for name in ('LICENSE', 'README.md', 'THIRD_PARTY_NOTICES.md'):

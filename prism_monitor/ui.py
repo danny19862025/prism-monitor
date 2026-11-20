@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (QApplication, QGridLayout, QLabel, QMenu, QSizePo
 from . import __version__
 from .collector import Collector
 from .model import Snapshot
+from . import poster as P
 from .util import LINUX, WINDOWS
 
 ACCENT = '#7cc7ff'
@@ -223,7 +224,10 @@ class Overlay(QWidget):
         self.batteries = RowSection('Bluetooth battery', with_bar=True)
         for w in (self.fps, self.system, self.fans, self.batteries):
             box.addWidget(w)
-        self.setMinimumWidth(230)
+        self.box = box
+        self.cards = (self.fps, self.system, self.fans, self.batteries)
+        self.poster = P.PosterView()
+        box.addWidget(self.poster)
         self.apply_settings()
 
         self.timer = QTimer(self)
@@ -241,7 +245,16 @@ class Overlay(QWidget):
         except (TypeError, ValueError):
             return default
 
+    def is_poster(self) -> bool:
+        return self.opt('style', 'poster') == 'poster'
+
     def apply_settings(self):
+        poster = self.is_poster()
+        self.poster.setVisible(poster)
+        for card in self.cards:
+            card.setVisible(not poster)
+        self.box.setContentsMargins(*((0, 0, 0, 0) if poster else (14, 12, 14, 12)))
+        self.setMinimumWidth(0 if poster else 230)
         on_top = self.opt('on_top', True)
         self.setWindowFlag(Qt.WindowStaysOnTopHint, on_top)
         self.setWindowFlag(Qt.WindowStaysOnBottomHint, not on_top)
@@ -260,6 +273,10 @@ class Overlay(QWidget):
     # data ----------------------------------------------------------------
     def refresh(self):
         snap: Snapshot = self.collector.snapshot()
+        if self.is_poster():
+            self.refresh_poster(snap)
+            self.adjustSize()
+            return
         tips = self.opt('show_tips', False)
 
         def place(section, key, has_data, note_key):
@@ -293,9 +310,52 @@ class Overlay(QWidget):
         place(self.batteries, 'show/batteries', bool(snap.batteries), 'batteries')
         self.adjustSize()
 
+    def refresh_poster(self, snap: Snapshot):
+        cpu, gpu, mem = snap.cpu, snap.gpu, snap.memory
+        show = lambda key: self.opt(key, True)  # noqa: E731
+        fps = snap.fps if show('show/fps') else None
+        sys_rows = []
+        if fps:
+            name = fps.app.removesuffix('.exe').upper()
+            hero = (f'{fps.fps:.0f}', 'FPS', f'{name[:18]}  ·  {fps.frametime_ms:.1f} MS')
+            caption = 'GAMING'
+            if cpu is not None and cpu.has_data():
+                sys_rows.append(P.Row('CPU', chip_text(cpu).replace('  ·  ', ' · '), P.temp_color(cpu.temp)))
+        elif cpu is not None and cpu.temp is not None:
+            load = f'{cpu.load:.0f}% LOAD  ·  ' if cpu.load is not None else ''
+            hero = (f'{cpu.temp:.0f}', 'CPU', f'{load}{cpu.temp:.0f}°C')
+            caption = 'MONITOR'
+        else:
+            load = cpu.load if cpu is not None and cpu.load is not None else 0
+            hero = (f'{load:.0f}', 'CPU', 'LOAD  %')
+            caption = 'MONITOR'
+        if gpu is not None and gpu.has_data():
+            sys_rows.append(P.Row('GPU', chip_text(gpu).replace('  ·  ', ' · '), P.temp_color(gpu.temp)))
+        if mem is not None:
+            sys_rows.append(P.Row('MEMORY', f'{mem.used_gb:.1f} / {mem.total_gb:.0f} GB',
+                                  P.WARN if mem.percent >= 90 else P.TEXT))
+            if mem.swap_total_gb:
+                sys_rows.append(P.Row('SWAP', f'{mem.swap_used_gb:.1f} / {mem.swap_total_gb:.0f} GB',
+                                      P.WARN if mem.swap_used_gb / mem.swap_total_gb >= .5 else P.TEXT))
+        groups = []
+        if show('show/system') and sys_rows:
+            groups.append(P.Group('SYSTEM', sys_rows))
+        if show('show/fans') and snap.fans:
+            groups.append(P.Group('FANS', [P.Row(f.name.upper(), f.text(), P.TEXT) for f in snap.fans]))
+        if show('show/batteries') and snap.batteries:
+            groups.append(P.Group('BLUETOOTH', [
+                P.Row(b.name.upper(), b.text(), P.battery_color(b.percent),
+                      None if b.percent is None else b.percent / 100) for b in snap.batteries]))
+        scale = {'small': .8, 'medium': 1.0, 'large': 1.25}.get(self.opt('size', 'medium'), 1.0)
+        self.poster.set_content(hero, caption, groups, scale)
+
     # painting / moving -----------------------------------------------------
     def paintEvent(self, _):
         p = QPainter(self)
+        if self.is_poster():
+            # near-transparent fill so the whole widget can still be dragged / right-clicked
+            p.fillRect(self.rect(), QColor(0, 0, 0, 1))
+            return
         p.setRenderHint(QPainter.Antialiasing)
         alpha = max(40, min(255, int(255 * self.opt('opacity', DEFAULT_OPACITY) / 100)))
         p.setPen(QPen(QColor(124, 199, 255, 70), 1))
@@ -436,9 +496,20 @@ class Controller:
             a = menu.addAction(text, lambda k=key: self.toggle(k, True))
             a.setCheckable(True)
             a.setChecked(o.opt(key, True))
-        tips = menu.addAction('Show tips for empty sections', lambda: self.toggle('show_tips'))
+        tips = menu.addAction('Show tips for empty sections (Card look)', lambda: self.toggle('show_tips'))
         tips.setCheckable(True)
         tips.setChecked(o.opt('show_tips', False))
+        tips.setEnabled(not o.is_poster())
+        look = menu.addMenu('Look')
+        for key, text in (('poster', 'Poster (like the Still clock)'), ('card', 'Card')):
+            a = look.addAction(text, lambda k=key: self.set_option('style', k))
+            a.setCheckable(True)
+            a.setChecked(o.opt('style', 'poster') == key)
+        size = menu.addMenu('Size (Poster look)')
+        for key in ('small', 'medium', 'large'):
+            a = size.addAction(key.title(), lambda k=key: self.set_option('size', k))
+            a.setCheckable(True)
+            a.setChecked(o.opt('size', 'medium') == key)
         menu.addSeparator()
         top = menu.addAction('Stay on top of windows (off: sit on the desktop)', lambda: self.toggle('on_top', True))
         top.setCheckable(True)
@@ -470,6 +541,13 @@ class Controller:
         menu.addSeparator()
         menu.addAction(f'Quit Prism Monitor {__version__}', self.app.quit)
         return menu
+
+    def set_option(self, key, value):
+        self.settings.setValue(key, value)
+        self.overlay.apply_settings()
+        self.overlay.refresh()
+        if self.tray:
+            self.tray.setContextMenu(self.build_menu())
 
     def set_opacity(self, value):
         self.settings.setValue('opacity', value)
