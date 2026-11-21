@@ -1,68 +1,114 @@
 # Prism Monitor
 
-A small always-on-top widget that shows **game FPS**, **CPU and GPU temperature and usage**, **memory**, **fan speeds** and **Bluetooth device battery**,
-on **Windows 10/11** and **Linux**. It sits in a corner of the screen, with a tray icon for its options.
+A quiet desktop widget for **Windows 10/11** and **Linux** that shows **game FPS**, **CPU and GPU temperature and load**, **memory**, **fan speeds** and **controller, keyboard and headset batteries**. It sits on your desktop or over your game, with a tray icon for its options. It only reads sensors and never changes fan speeds or clocks.
 
-![Prism Monitor in demo mode](docs/demo.png)
+<p align="center">
+  <img src="docs/poster.png" alt="Prism Monitor in the Poster look: CPU temperature as the big number, then system, fans and batteries" width="340">
+  <img src="docs/poster-gaming.png" alt="Prism Monitor while gaming: FPS as the big number" width="340">
+</p>
 
-It is a separate companion app to [prism-light](https://github.com/danny19862025/prism-light), and it only reads sensors. It never changes fan speeds.
+## Download and install
 
-## What it reads, and from where
+### Windows 10 / 11
+
+1. Download **`PrismMonitor-Setup-<version>.exe`** from the [latest release](https://github.com/danny19862025/prism-monitor/releases/latest).
+2. Run it. It installs for your account only, with no administrator prompt (choose *all users* in the first dialog if you want that).
+   The installer is not code-signed, so Windows SmartScreen may warn. Check the SHA-256 listed in the release, then choose **More info → Run anyway**.
+3. Start **Prism Monitor** from the Start menu. The widget appears at the top right of your main screen, and a tray icon (four bars) appears in the notification area.
+4. **CPU temperature, CPU power and motherboard fans** need a small sensor helper. Keep **Set up CPU sensors** ticked in the installer, or click the tray notification on first start. Windows asks for administrator approval once. After that the helper starts automatically, with no prompt.
+
+Prefer no installer? Download **`PrismMonitor-windows.zip`** from the same release, extract it and run `PrismMonitor\PrismMonitor.exe`. Keep the folder together.
+
+**Updating:** run the new installer over the old one. Your settings are kept. **Settings → About → Check for updates** tells you when a new version is out.
+
+**Uninstalling:** **Settings → Apps → Installed apps → Prism Monitor → Uninstall**. Your settings stay in `%APPDATA%\PrismMonitor`.
+
+### Linux
+
+Tested on Arch Linux with KDE Plasma 6 (Wayland). No administrator rights are needed: all sensors come from the kernel.
+
+**1. Install what it needs** (Python and git; a C compiler and Vulkan tools for game FPS). Pick your distribution:
+
+```sh
+# Arch, Manjaro, EndeavourOS, CachyOS
+sudo pacman -S --needed git python gcc vulkan-icd-loader vulkan-tools
+# Debian, Ubuntu, Linux Mint, Pop!_OS
+sudo apt install git python3 python3-venv gcc libvulkan1 vulkan-tools
+# Fedora, Nobara
+sudo dnf install git python3 gcc vulkan-loader vulkan-tools
+# openSUSE
+sudo zypper install git python3 gcc libvulkan1 vulkan-tools
+```
+
+Game FPS also needs your GPU's Vulkan driver. On Arch, add `vulkan-radeon` (AMD), `vulkan-intel` (Intel) or `nvidia-utils` (NVIDIA); on Debian, Ubuntu and Fedora, AMD and Intel use `mesa-vulkan-drivers`. Full per-GPU commands are in the [guide](docs/GUIDE.md#installing-what-fps-needs).
+
+**2. Download and install Prism Monitor:**
+
+```sh
+git clone https://github.com/danny19862025/prism-monitor.git
+cd prism-monitor
+./Install-Linux.sh
+```
+
+The installer sets up a Python environment in the folder, builds the game FPS layer, adds **Prism Monitor** to your app menu, turns on **Start when I sign in** and starts it. On KDE Plasma 6 and GNOME it also installs a desktop widget (see below). Running it again is safe.
+
+**3. Turn on game FPS:** right-click the widget and switch on **Show FPS**. Games started after that are counted, including Windows games on Steam/Proton. No launch options are needed.
+
+**Updating:**
+
+```sh
+cd prism-monitor
+git pull
+./Install-Linux.sh
+```
+
+**Desktop widget (KDE Plasma 6 and GNOME 45–49).** On KDE, right-click the desktop → **Add or Manage Widgets** → search **Prism Monitor** and drag it onto the desktop. On GNOME, sign out and back in once, and the widget appears behind your windows. Prism Monitor keeps running in the tray and feeds the widget. **Show widget** in the tray menu brings its own window back.
+
+## Using it
+
+- **Move** it by dragging. **Right-click** the widget or the tray icon for the menu. **Double-click** opens Settings.
+- **Widget position:** *On top of windows* (see it over games), *Normal*, or *Behind windows* (on the desktop like a clock, under every window).
+- **Looks:** *Poster* (no panel, bold Barlow lettering, a big faded number) or *Card* (a dark panel with history graphs). In Poster you can choose the size, a background panel and its opacity, the font, the text colour and the number colour.
+- **Big number:** CPU or GPU temperature, replaced by FPS while you play.
+- **Sections:** turn FPS, CPU / GPU / memory, fans and batteries on or off from the menu.
+- **Themes:** Dark, Midnight, Light, or System (follows Windows light/dark mode).
+- **Keep awake:** keep the PC awake for a while, until a download, render or app finishes, then optionally sleep or shut down. Like `caffeinate` on a Mac.
+- **Click-through** lets clicks pass to the game underneath. Turn it off from the tray icon.
+
+## What it reads
 
 | | Windows | Linux |
 |---|---|---|
-| **Fans** | [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor) while it is running (Windows has no built-in fan API), plus NVIDIA GPU fan % via `nvidia-smi` | Kernel `hwmon` (board chips, laptop EC drivers such as `hp`/`thinkpad`/`dell-smm`, AMD GPUs), plus `nvidia-smi` |
-| **FPS** | Bundled Intel [PresentMon](https://github.com/GameTechDev/PresentMon): works for any DirectX/Vulkan/OpenGL game, and shows the game in the foreground | [MangoHud](https://github.com/flightlessmango/MangoHud) logging, for games started with `prism-monitor-run` |
-| **CPU / GPU** | Usage from Windows. Temperatures from LibreHardwareMonitor, plus NVIDIA via `nvidia-smi` | `/proc/stat`, and temperatures from hwmon (`coretemp`, `k10temp`, `zenpower`, `amdgpu`, `nouveau`) plus `nvidia-smi`. Intel integrated graphics report no temperature, so they show no GPU row |
-| **Memory** | Windows memory status | `/proc/meminfo`, plus a Swap row when swap is set up |
-| **Bluetooth battery** | The same battery value that Settings › Bluetooth shows | BlueZ (`org.bluez.Battery1`), kernel HID batteries (Logitech, DualSense, Xbox via xpadneo…), and UPower as a fallback |
+| **CPU** | Load from Windows. Temperature, power and measured clocks from the sensor helper (LibreHardwareMonitor) | `/proc`, cpufreq, hwmon (`k10temp`, `coretemp`, `zenpower`), RAPL power |
+| **GPU** | AMD driver (ADL): temperature, hotspot, load, clock, power, fan, VRAM | `amdgpu` driver files: temperature, power, clock, fan, load, VRAM |
+| **Memory and swap** | Windows memory status and page file | `/proc/meminfo` (swap partitions, files and zram) |
+| **Fans** | Motherboard fans through the sensor helper | Kernel hwmon fan inputs (needs a Super I/O driver such as `nct6775` or `it87`) |
+| **Game FPS** | Bundled Intel PresentMon: DirectX, Vulkan and OpenGL games | A small Vulkan layer: Vulkan games, including Proton/DXVK |
+| **Batteries** | PlayStation and Xbox controllers, Bluetooth keyboards, mice and headsets, laptop battery | UPower (controllers, BlueZ devices, Logitech, laptop battery) |
 
-Sections with nothing to show are hidden. For example, FPS appears only while a game is running. To see why a section is empty, right-click the widget and turn on **Show tips for empty sections**.
+Everything stays on your PC. Prism Monitor sends nothing anywhere, except one request to GitHub when you click **Check for updates**.
 
-## Windows
+The [guide](docs/GUIDE.md) covers every setting, the sensor helper, FPS details and troubleshooting.
 
-1. Download `PrismMonitor-windows.zip` from the latest build in the **Actions** tab, unzip it and run `PrismMonitor.exe`.
-   To run it from source instead, use `Run-PrismMonitor.cmd`. It needs Python 3.12+ and sets itself up on first run.
-2. **Fans:** install and run LibreHardwareMonitor **as administrator** (`winget install LibreHardwareMonitor.LibreHardwareMonitor`).
-   In its Options menu, turn on *Run on Windows startup* and *Start minimized*. Prism Monitor picks its fans up automatically.
-3. **FPS:** Windows only lets administrators, or members of *Performance Log Users*, watch frame events.
-   Right-click the widget and choose **Allow FPS without admin…**, approve the prompt, then sign out and back in.
-   (Starting Prism Monitor as administrator also works.)
-4. Games need to run in **borderless/windowed** mode for the widget to be drawn above them. Exclusive fullscreen covers every other window.
+## Build from source
 
-## Linux
+**Windows** (Python 3.12–3.14 with the `py` launcher):
 
-```sh
-python build.py                         # or download PrismMonitor-linux.zip from Actions
-dist/PrismMonitor/install-linux.sh      # installs to ~/.local, adds a menu entry
-sudo pacman -S mangohud lib32-mangohud  # only needed for FPS
+```bat
+Run-PrismMonitor.cmd      :: set up and run from source
+Build-Windows.cmd         :: test, then build dist\PrismMonitor-windows.zip
 ```
 
-Running from source: `scripts/install-linux.sh` does the same thing using a `.venv` in this folder.
+The installer `dist\PrismMonitor-Setup-<version>.exe` is built too when [Inno Setup 6](https://jrsoftware.org/isinfo.php) is installed (`winget install JRSoftware.InnoSetup`).
 
-**FPS:** start each game through `prism-monitor-run`. For Steam games, open the game's Properties and set
-**Launch options** to `prism-monitor-run %command%`. It turns on MangoHud logging, makes MangoHud's own HUD invisible (MangoHud stops logging if the HUD is switched off; set
-`PRISM_MONITOR_HUD=1` to keep the HUD) and Prism Monitor reads the live log.
-
-On a Wayland session the widget runs through XWayland, because Wayland doesn't let apps keep themselves on top or remember where their window was.
-
-## Using the widget
-
-- Drag the widget to move it. Right-click it, or the tray icon, for the menu.
-- **Look:** *Poster* (the default) matches the Still desktop clock: no panel, bold Barlow lettering, a large faded light-blue number with a °C mark (CPU or GPU temperature, your choice; FPS while you play) and a vertical caption. *Card* is a compact dark panel. Poster comes in Small, Medium and Large.
-- It's a widget, not an app window: it doesn't appear in the taskbar/dock or Alt+Tab, and on KDE Plasma it shows on every virtual desktop.
-- **Stay on top of windows** (on by default, so you can see it over games). Turn it off to have it sit on the desktop behind your windows, like a clock widget.
-- In the menu you can show or hide each section, lock its position, make it **click-through** (clicks pass to the game; to undo, open Prism Monitor again from the app menu), change the background opacity, and start it at sign-in.
-- `--demo` shows sample readings, `--print` prints one reading to the terminal, and `--smoke-test` checks that it starts.
-
-## Development
+**Tests** (any platform):
 
 ```sh
-python -m venv .venv && .venv/bin/pip install -r requirements-build.txt
 QT_QPA_PLATFORM=offscreen .venv/bin/python -m unittest discover -s tests -v
-.venv/bin/python main.py --demo
 ```
 
-GitHub Actions builds and smoke-tests both the Windows and Linux portable ZIPs on every push.
+## Support
 
-MIT licensed. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Prism Monitor is free, with no ads or tracking. If it is useful to you, you can [buy me a coffee](https://buymeacoffee.com/danny1986). ☕
+
+Licence: GPL-3.0. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for bundled components.

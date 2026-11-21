@@ -1,314 +1,343 @@
-"""Game frame-rate sources.
+# SPDX-License-Identifier: GPL-3.0-only
+"""Game FPS and frame time from Intel PresentMon (MIT).
 
-Windows: Intel PresentMon (MIT) streams one CSV row per presented frame for every
-process. It needs administrator rights or membership of the built-in
-"Performance Log Users" group.
-Linux: there is no system-wide frame counter, so games are started through
-`prism-monitor-run` (Steam: `prism-monitor-run %command%`). That enables
-MangoHud logging into Prism Monitor's folder, and the newest log is tailed live.
+PresentMon reads the Windows Event Tracing (ETW) events that DXGI, D3D9,
+DirectX kernel and the compositor already emit for every present call. Nothing
+is injected into the game and nothing touches anti-cheat, so it works for
+Direct3D 9/10/11/12, Vulkan and OpenGL games that present through the Windows
+graphics stack. The numbers belong to the selected game process: each CSV row
+carries the presenting ProcessID and the time since that process's previous
+present (MsBetweenPresents). The widget's own drawing and the monitor refresh
+rate are not involved.
+
+Starting an ETW session needs administrator rights or membership of the
+built-in "Performance Log Users" group. If neither is available the sensor
+helper (already elevated) can run PresentMon and relay its CSV.
 """
-from __future__ import annotations
-
+import collections
 import csv
-import io
 import os
-import shutil
+import socket
+import struct
 import subprocess
+import sys
 import threading
 import time
-from collections import deque
 from pathlib import Path
 
-from .model import Fps
-from .util import NO_WINDOW, WINDOWS, app_root, mangohud_log_dir
+from . import winapi
+from .model import reading
+
+SESSION = 'PrismMonitorFPS'
+PRESENTMON_ARGS = ['--output_stdout', '--no_console_stats', '--v1_metrics', '--session_name', SESSION,
+                   '--stop_existing_session', '--no_track_input', '--no_track_gpu', '--no_track_display',
+                   '--exclude', 'dwm.exe']
+# Shell/system processes that present but are never the game in automatic mode.
+AUTO_IGNORED = {'dwm.exe', 'explorer.exe', 'searchhost.exe', 'shellexperiencehost.exe', 'textinputhost.exe',
+                'startmenuexperiencehost.exe', 'presentmon.exe', 'prismmonitor.exe', 'lockapp.exe',
+                'applicationframehost.exe', 'systemsettings.exe', 'widgets.exe', 'searchapp.exe'}
+WINDOW_S = 1.0       # FPS averaging window
+STALE_S = 2.0        # no presents for this long → unavailable
+FORGET_S = 10.0
 
 
 class FrameTracker:
-    """Rolling per-process frame times -> FPS, average frame time and 1% low."""
+    """Thread-safe PresentMon CSV consumer with per-process frame statistics."""
 
-    WINDOW_MS = 1000.0   # FPS is averaged over the last second of frames
-    LOW_WINDOW_MS = 10000.0
-    STALE_S = 2.0        # a process that stopped presenting disappears after this
-
-    def __init__(self, clock=time.monotonic):
-        self.clock = clock
-        self.frames: dict[tuple[int, str], deque[float]] = {}
-        self.last_seen: dict[tuple[int, str], float] = {}
+    def __init__(self, own_pid=None, resolve_name=winapi.process_image_name, foreground=winapi.foreground_pid):
+        self.own_pid = own_pid if own_pid is not None else os.getpid()
+        self.resolve_name = resolve_name
+        self.foreground = foreground
         self.lock = threading.Lock()
+        self.header = None
+        self.processes = {}          # pid -> {'name', 'chains': {swapchain: deque[(t, ms)]}, 'seen'}
+        self.auto_pid = None
+        self.auto_since = 0.0
+        self.busiest_when_unknown = sys.platform.startswith('linux')
+        self.source = 'vklayer' if self.busiest_when_unknown else 'presentmon'
 
-    def add(self, pid: int, app: str, frametime_ms: float):
-        if not 0.05 < frametime_ms < 5000:
-            return
-        key = (pid, app)
+    def reset(self):
         with self.lock:
-            q = self.frames.setdefault(key, deque())
-            q.append(frametime_ms)
-            total = sum(q)
-            while q and total > self.LOW_WINDOW_MS:
-                total -= q.popleft()
-            self.last_seen[key] = self.clock()
+            self.header = None
+            self.processes.clear()
 
-    def stats(self, key) -> Fps | None:
-        q = self.frames.get(key)
-        if not q:
-            return None
-        recent, total = [], 0.0
-        for ft in reversed(q):
-            recent.append(ft)
-            total += ft
-            if total >= self.WINDOW_MS:
-                break
-        avg = total / len(recent)
-        ordered = sorted(q, reverse=True)
-        worst = ordered[:max(1, len(ordered) // 100)]
-        low = 1000.0 / (sum(worst) / len(worst)) if len(q) >= 100 else None
-        return Fps(app=key[1], fps=1000.0 / avg, frametime_ms=avg, low_1pct=low)
-
-    def current(self, prefer_pid: int | None = None) -> Fps | None:
-        now = self.clock()
-        with self.lock:
-            for key in [k for k, t in self.last_seen.items() if now - t > self.STALE_S]:
-                self.last_seen.pop(key, None)
-                self.frames.pop(key, None)
-            if not self.frames:
-                return None
-            if prefer_pid is not None:
-                for key in self.frames:
-                    if key[0] == prefer_pid:
-                        return self.stats(key)
-            # otherwise the busiest presenter (the game, not a 60 Hz launcher)
-            key = max(self.frames, key=lambda k: len(self.frames[k]))
-            return self.stats(key)
-
-
-def _column(header: list[str], *names: str) -> int | None:
-    lowered = [h.strip().casefold() for h in header]
-    for name in names:
-        if name.casefold() in lowered:
-            return lowered.index(name.casefold())
-    return None
-
-
-class PresentMonParser:
-    """Feeds PresentMon CSV lines (1.x or 2.x column names) into a FrameTracker."""
-
-    IGNORE = {'dwm.exe', 'prismmonitor.exe', 'explorer.exe', 'searchhost.exe',
-              'textinputhost.exe', 'shellexperiencehost.exe', 'startmenuexperiencehost.exe'}
-
-    def __init__(self, tracker: FrameTracker):
-        self.tracker = tracker
-        self.header: list[str] | None = None
-        self.app = self.pid = self.ft = None
-
-    def feed(self, line: str):
-        line = line.strip()
-        if not line:
+    def feed(self, line, now=None):
+        row = next(csv.reader([line]), None)
+        if not row:
             return
-        row = next(csv.reader(io.StringIO(line)))
-        if row and row[0].strip().casefold() == 'application':
-            self.header = row
-            self.app = _column(row, 'Application')
-            self.pid = _column(row, 'ProcessID')
-            self.ft = _column(row, 'MsBetweenPresents', 'msBetweenPresents', 'MsBetweenAppStart', 'FrameTime')
+        if 'ProcessID' in row and 'Application' in row:
+            with self.lock:
+                # v1 CSV uses lower-case "msBetweenPresents", v2 "MsBetweenPresents".
+                self.header = {name.casefold(): i for i, name in enumerate(row)}
             return
-        if self.header is None or None in (self.app, self.pid, self.ft) or len(row) <= max(self.app, self.pid, self.ft):
-            return
-        app = row[self.app].strip()
-        if app.casefold() in self.IGNORE:
+        header = self.header
+        if header is None:
             return
         try:
-            self.tracker.add(int(row[self.pid]), app, float(row[self.ft]))
-        except ValueError:
-            pass
+            pid = int(row[header['processid']])
+            ms = float(row[header['msbetweenpresents']])
+            chain = row[header['swapchainaddress']] if 'swapchainaddress' in header else ''
+            if 'timeinseconds' in header:
+                t = float(row[header['timeinseconds']])
+            elif 'timeinms' in header:
+                t = float(row[header['timeinms']]) / 1000.0
+            else:
+                t = None
+            name = row[header['application']]
+        except (KeyError, ValueError, IndexError):
+            return
+        self.add(pid, name, chain, t, ms, now)
 
+    def add(self, pid, name, chain, t, ms, now=None):
+        """One present of `pid` on swapchain `chain`: t seconds (or None), ms since its previous present."""
+        if pid == self.own_pid or pid <= 4:
+            return
+        now = time.monotonic() if now is None else now
+        with self.lock:
+            proc = self.processes.get(pid)
+            if proc is None:
+                if not name or name.startswith('<'):
+                    name = self.resolve_name(pid) or f'PID {pid}'
+                proc = self.processes[pid] = {'name': name, 'chains': {}, 'seen': now}
+            proc['seen'] = now
+            frames = proc['chains'].setdefault(chain, collections.deque(maxlen=4000))
+            frames.append((t if t is not None else now, ms))
 
-def foreground_pid() -> int | None:
-    if not WINDOWS:
+    def _prune(self, now):
+        for pid in [p for p, proc in self.processes.items() if now - proc['seen'] > FORGET_S]:
+            del self.processes[pid]
+
+    @staticmethod
+    def _stats(proc):
+        best = None
+        chains = [frames for frames in proc['chains'].values() if frames]
+        newest = max((frames[-1][0] for frames in chains), default=None)
+        for frames in chains:
+            latest = frames[-1][0]
+            if latest < newest - STALE_S:
+                continue   # a swapchain the game replaced (resize, mode change) keeps its last frames forever
+            window = [ms for t, ms in frames if t >= latest - WINDOW_S and 0 < ms < 5000]
+            if window and (best is None or len(window) > len(best)):
+                best = window
+        if not best:
+            return None
+        mean = sum(best) / len(best)
+        return 1000.0 / mean, mean, max(best)
+
+    def presenting(self, now=None):
+        """[(pid, name, fps)] for processes that presented recently, busiest first."""
+        now = time.monotonic() if now is None else now
+        out = []
+        with self.lock:
+            self._prune(now)
+            for pid, proc in self.processes.items():
+                if now - proc['seen'] <= STALE_S:
+                    stats = self._stats(proc)
+                    if stats:
+                        out.append((pid, proc['name'], stats[0]))
+        return sorted(out, key=lambda x: -x[2])
+
+    def _choose(self, target, now):
+        live = {pid: p for pid, p in self.processes.items() if now - p['seen'] <= STALE_S}
+        if target:
+            matches = [pid for pid, p in live.items() if p['name'].casefold() == target.casefold()]
+            return max(matches, key=lambda pid: len(self._stats(live[pid]) or ()), default=None)
+        fg = self.foreground()
+        if fg in live and live[fg]['name'].casefold() not in AUTO_IGNORED:
+            self.auto_pid, self.auto_since = fg, now
+            return fg
+        # Brief grace when focus moves to a non-presenting window (e.g. a notification).
+        if self.auto_pid in live and now - self.auto_since < 3.0:
+            return self.auto_pid
+        if self.busiest_when_unknown:
+            # Linux/Wayland: the focused app is not always knowable (X11's active window can be a stale
+            # XWayland window while a Wayland app has focus). Follow the busiest presenter.
+            best, best_fps = None, 0.0
+            for pid, proc in live.items():
+                stats = self._stats(proc)
+                if stats and stats[0] > best_fps and proc['name'].casefold() not in AUTO_IGNORED:
+                    best, best_fps = pid, stats[0]
+            return best
         return None
-    import ctypes
-    from ctypes import wintypes
-    user32 = ctypes.windll.user32
-    hwnd = user32.GetForegroundWindow()
-    if not hwnd:
-        return None
-    pid = wintypes.DWORD()
-    user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
-    return pid.value or None
+
+    def read(self, target='', now=None):
+        """Readings for the target process name ('' = foreground application)."""
+        now = time.monotonic() if now is None else now
+        with self.lock:
+            self._prune(now)
+            pid = self._choose(target, now)
+            if pid is None:
+                return {}, None
+            proc = self.processes[pid]
+            stats = self._stats(proc)
+            name = proc['name']
+        if not stats:
+            return {}, name
+        fps, frametime, worst = stats
+        return {'fps': reading(fps, self.source, now=now),
+                'frametime': reading(frametime, self.source, extra=worst, now=now)}, name
 
 
-def find_presentmon() -> str | None:
-    override = os.environ.get('PRISM_MONITOR_PRESENTMON')
-    if override and Path(override).is_file():
-        return override
-    for folder in (app_root() / 'tools' / 'presentmon', app_root() / 'vendor' / 'presentmon'):
-        for exe in sorted(folder.glob('PresentMon*.exe'), reverse=True):
-            return str(exe)
-    return shutil.which('PresentMon.exe') or shutil.which('PresentMon')
+class LocalPresentMon:
+    """Runs the bundled PresentMon.exe as the current user."""
 
+    def __init__(self, executable, tracker):
+        self.executable = Path(executable)
+        self.tracker = tracker
+        self.process = None
+        self.thread = None
+        self.error = None
+        self.got_header = False
+        self.stderr_tail = collections.deque(maxlen=20)
 
-ACCESS_HINT = ('FPS needs permission to watch frame events. Right-click Prism Monitor and choose '
-               '"Allow FPS without admin…" (then sign out and in), or run Prism Monitor as administrator.')
-
-
-class PresentMonSource:
-    def __init__(self):
-        self.tracker = FrameTracker()
-        self.parser = PresentMonParser(self.tracker)
-        self.proc: subprocess.Popen | None = None
-        self.error = ''
-        self.exe = find_presentmon()
-        self.thread: threading.Thread | None = None
-        self.stopping = False
+    @property
+    def running(self):
+        return self.process is not None and self.process.poll() is None
 
     def start(self):
-        if not self.exe:
-            self.error = 'PresentMon is missing from this build, so FPS is unavailable.'
-            return
-        args = [self.exe, '--output_stdout', '--no_console_stats', '--stop_existing_session',
-                '--session_name', 'PrismMonitor', '--v1_metrics', '--exclude', 'dwm.exe']
+        if self.running:
+            return True
+        self.error, self.got_header = None, False
+        if not self.executable.is_file():
+            self.error = f'PresentMon is missing ({self.executable}).'
+            return False
+        winapi.stop_trace_session(SESSION)   # clear a session orphaned by a crash
         try:
-            self.proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                         stdin=subprocess.DEVNULL, text=True, bufsize=1,
-                                         creationflags=NO_WINDOW, errors='replace')
-        except OSError as exc:
-            self.error = f'Could not start PresentMon: {exc}'
-            return
-        self.error = 'Waiting for a game…'
-        self.thread = threading.Thread(target=self._pump, daemon=True, name='presentmon')
+            self.process = subprocess.Popen([str(self.executable)] + PRESENTMON_ARGS, stdout=subprocess.PIPE,
+                                            stderr=subprocess.PIPE, stdin=subprocess.DEVNULL, text=True,
+                                            encoding='utf-8', errors='replace', bufsize=1,
+                                            creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+        except OSError as e:
+            self.error = f'PresentMon could not start: {e}'
+            return False
+        winapi.tie_to_this_process(self.process.pid)
+        self.tracker.reset()
+        self.thread = threading.Thread(target=self._pump, name='presentmon', daemon=True)
         self.thread.start()
+        threading.Thread(target=self._pump_err, name='presentmon-err', daemon=True).start()
+        return True
 
     def _pump(self):
-        assert self.proc and self.proc.stdout
-        log = deque(maxlen=8)
-        for line in self.proc.stdout:
-            if self.parser.header is None and not line.lstrip().casefold().startswith('application'):
-                log.append(line.strip())
-                continue
-            self.parser.feed(line)
-        code = self.proc.wait()
-        if self.stopping:
-            return
-        text = ' '.join(log).casefold()
-        if 'access' in text or 'elevat' in text or 'administrator' in text or code == 5:
-            self.error = ACCESS_HINT
-        else:
-            self.error = f'PresentMon stopped (code {code}). ' + ' '.join(log)[-200:]
+        process = self.process
+        for line in process.stdout:
+            if not self.got_header and 'ProcessID' in line:
+                self.got_header = True
+            self.tracker.feed(line.rstrip('\r\n'))
+        code = process.wait()
+        if not self.got_header:
+            detail = ' '.join(self.stderr_tail).strip()
+            self.error = ('PresentMon could not start an ETW trace session (needs administrator rights or the '
+                          f'"Performance Log Users" group). Exit {code}. {detail[:200]}').strip()
+        elif self.process is process:
+            self.error = f'PresentMon stopped (exit {code}).'
 
-    def read(self) -> Fps | None:
-        return self.tracker.current(foreground_pid())
+    def _pump_err(self):
+        process = self.process
+        try:
+            for line in process.stderr:
+                self.stderr_tail.append(line.strip())
+        except (ValueError, OSError):
+            pass
 
     def stop(self):
-        self.stopping = True
-        if self.proc and self.proc.poll() is None:
-            self.proc.terminate()
+        process, self.process = self.process, None
+        if process and process.poll() is None:
+            process.terminate()
             try:
-                self.proc.wait(timeout=3)
+                process.wait(3)
             except subprocess.TimeoutExpired:
-                self.proc.kill()
+                process.kill()
+        if process:
+            winapi.stop_trace_session(SESSION)
+        if self.thread:
+            self.thread.join(3)
+            self.thread = None
 
 
-def parse_mangohud_tail(lines: list[str], header: list[str]) -> Fps | None:
-    """Latest FPS from the last complete data line of a MangoHud log."""
-    fps_col = _column(header, 'fps')
-    ft_col = _column(header, 'frametime')
-    if fps_col is None:
-        return None
-    for line in reversed(lines):
-        parts = line.strip().split(',')
-        if len(parts) != len(header):  # skip a half-written last line
-            continue
-        try:
-            fps = float(parts[fps_col])
-            ft = float(parts[ft_col]) if ft_col is not None else 1000.0 / max(fps, 0.1)
-        except ValueError:
-            continue
-        return Fps(app='', fps=fps, frametime_ms=ft)
-    return None
+class LinuxFrameReceiver:
+    """Receives present timestamps from Prism Monitor's Vulkan layer (see monitor/vklayer).
 
+    Same interface as LocalPresentMon. The socket lives in the abstract namespace, so it
+    reaches games inside Steam's container runtime too. Each datagram's sender uid and pid
+    come from the kernel (SO_PASSCRED); datagrams from other users are dropped.
+    """
+    PREFIX = 'PFPS1'
 
-def mangohud_app_name(path: Path) -> str:
-    stem = path.stem  # "<program>_YYYY-MM-DD_HH-MM-SS"
-    parts = stem.rsplit('_', 2)
-    return parts[0] if len(parts) == 3 else stem
+    def __init__(self, tracker, name=None):
+        self.tracker = tracker
+        self.address = '\0' + (name or f'prism-monitor-fps-{os.getuid()}')
+        self.sock = None
+        self.thread = None
+        self.error = None
+        self.got_header = False      # True once any game has sent a frame
+        self.last = {}               # (pid, chain) -> previous timestamp in seconds
+        self.uid = os.getuid()
 
-
-LINUX_HINT = ('Start games with prism-monitor-run (Steam launch options: '
-              '"prism-monitor-run %command%").')
-
-
-class MangoHudSource:
-    LIVE_S = 3.0
-
-    def __init__(self, folder: Path | None = None):
-        self.folder = folder or mangohud_log_dir()
-        self.error = ''
-        self.cached: tuple[Path, list[str]] | None = None
+    @property
+    def running(self):
+        return self.sock is not None and self.thread is not None and self.thread.is_alive()
 
     def start(self):
-        self.folder.mkdir(parents=True, exist_ok=True)
-        cutoff = time.time() - 3 * 86400
-        for old in self.folder.glob('*.csv'):
+        if self.running:
+            return True
+        self.error = None
+        try:
+            sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM | socket.SOCK_CLOEXEC)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_PASSCRED, 1)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1 << 20)
+            sock.bind(self.address)
+        except OSError as e:
+            self.error = (f'Could not open the FPS socket: {e}. Is another Prism Monitor running?'
+                          if getattr(e, 'errno', None) == 98 else f'Could not open the FPS socket: {e}.')
+            return False
+        sock.settimeout(0.5)
+        self.sock = sock
+        self.tracker.reset()
+        self.last.clear()
+        self.thread = threading.Thread(target=self._pump, args=(sock,), name='fps-layer', daemon=True)
+        self.thread.start()
+        return True
+
+    def _pump(self, sock):
+        creds_size = socket.CMSG_SPACE(struct.calcsize('3i'))
+        while self.sock is sock:
             try:
-                if old.stat().st_mtime < cutoff:
-                    old.unlink()
+                data, ancillary, _flags, _addr = sock.recvmsg(512, creds_size)
+            except socket.timeout:
+                continue
             except OSError:
-                pass
-        if not shutil.which('mangohud'):
-            self.error = ('Install MangoHud (sudo pacman -S mangohud lib32-mangohud), then start games with '
-                          'prism-monitor-run (Steam launch options: "prism-monitor-run %command%").')
-        else:
-            self.error = LINUX_HINT
+                break
+            pid = uid = None
+            for level, kind, payload in ancillary:
+                if level == socket.SOL_SOCKET and kind == socket.SCM_CREDENTIALS and len(payload) >= 12:
+                    pid, uid, _gid = struct.unpack('3i', payload[:12])
+            if uid != self.uid or not pid:
+                continue
+            self.handle(pid, data)
 
-    def _header(self, path: Path) -> list[str] | None:
-        if self.cached and self.cached[0] == path:
-            return self.cached[1]
+    def handle(self, pid, data, now=None):
+        parts = data.decode('utf-8', 'replace').split('\t', 3)
+        if len(parts) != 4 or parts[0] != self.PREFIX:
+            return
         try:
-            with path.open(errors='replace') as f:
-                for _ in range(12):
-                    line = f.readline()
-                    if not line:
-                        break
-                    if line.startswith('fps,'):
-                        header = line.strip().split(',')
-                        self.cached = (path, header)
-                        return header
-        except OSError:
-            pass
-        return None
-
-    def read(self) -> Fps | None:
-        now = time.time()
-        newest, newest_time = None, 0.0
-        try:
-            for log in self.folder.glob('*.csv'):
-                if log.name.endswith('_summary.csv'):
-                    continue
-                mtime = log.stat().st_mtime
-                if mtime > newest_time:
-                    newest, newest_time = log, mtime
-        except OSError:
-            return None
-        if newest is None or now - newest_time > self.LIVE_S:
-            return None
-        header = self._header(newest)
-        if not header:
-            return None
-        try:
-            with newest.open('rb') as f:
-                f.seek(0, os.SEEK_END)
-                size = f.tell()
-                f.seek(max(0, size - 4096))
-                tail = f.read().decode(errors='replace').splitlines()[1:]
-        except OSError:
-            return None
-        fps = parse_mangohud_tail(tail, header)
-        if fps is None:
-            return None
-        return Fps(app=mangohud_app_name(newest), fps=fps.fps, frametime_ms=fps.frametime_ms)
+            t = int(parts[2]) / 1e9
+        except ValueError:
+            return
+        chain, name = parts[1], parts[3].strip()
+        key = (pid, chain)
+        previous = self.last.get(key)
+        self.last[key] = t
+        if len(self.last) > 512:
+            self.last = {key: t}
+        if previous is None or t <= previous:
+            return
+        self.got_header = True
+        self.tracker.add(pid, name, chain, t, (t - previous) * 1000.0, now)
 
     def stop(self):
-        pass
-
-
-def make_source():
-    return PresentMonSource() if WINDOWS else MangoHudSource()
+        sock, self.sock = self.sock, None
+        if sock is not None:
+            sock.close()
+        if self.thread:
+            self.thread.join(2)
+            self.thread = None

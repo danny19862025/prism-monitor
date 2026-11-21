@@ -1,2 +1,3 @@
-"""Prism Monitor: fan speed, game FPS and Bluetooth battery in one small widget."""
-__version__ = '0.1.0'
+# SPDX-License-Identifier: GPL-3.0-only
+"""Prism Monitor desktop widget."""
+__version__ = "1.1.0"
