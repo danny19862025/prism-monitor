@@ -1,3 +1,5 @@
+> **Website:** [https://danny19862025.github.io/prism-monitor/](https://danny19862025.github.io/prism-monitor/)
+
 # Prism Monitor
 
 A quiet desktop widget for **Windows 10/11** and **Linux** that shows **game FPS**, **CPU and GPU temperature and load**, **memory**, **fan speeds** and **controller, keyboard and headset batteries**. It sits on your desktop or over your game, with a tray icon for its options. It only reads sensors and never changes fan speeds or clocks.
