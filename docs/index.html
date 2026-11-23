@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prism Monitor — Quiet Telemetry for Windows &amp; Linux</title>
+  <meta name="description" content="Always-on-top desktop widget showing game FPS, CPU and GPU temperature and load, memory, fan speeds, and controller or Bluetooth batteries on Windows 10/11 and Linux. Read-only, open source (GPL-3.0).">
+  <meta name="theme-color" content="#0c1722">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Prism Monitor — Quiet Telemetry for Desktop and Game">
+  <meta property="og:description" content="A quiet desktop widget for Windows 10/11 and Linux showing game FPS, CPU/GPU temperature and load, memory, fan speeds, and peripheral batteries.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://github.com/danny19862025/prism-monitor">
+  <meta property="og:image" content="assets/poster-gaming.png">
+
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+
+  <!-- Typography: Barlow (Prism Monitor's signature Poster font) + JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <!-- Ambient Atmospheric Backdrop -->
+  <div class="ambient-canvas" aria-hidden="true">
+    <div class="glow glow-slate"></div>
+    <div class="glow glow-amber"></div>
+    <div class="grid-veil"></div>
+  </div>
+
+  <!-- Sticky Navigation -->
+  <header class="site-header" id="top">
+    <div class="container nav-inner">
+      <a href="#top" class="brand" aria-label="Prism Monitor home">
+        <span class="brand-icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <rect x="3" y="12" width="3" height="8" rx="1" fill="#8cd0fb"/>
+            <rect x="8" y="7" width="3" height="13" rx="1" fill="#8cd0fb"/>
+            <rect x="13" y="4" width="3" height="16" rx="1" fill="#e6f2fa"/>
+            <rect x="18" y="9" width="3" height="11" rx="1" fill="#f2c15a"/>
+          </svg>
+        </span>
+        <span class="brand-name">PRISM MONITOR</span>
+      </a>
+
+      <nav class="nav-links" aria-label="Primary navigation">
+        <a href="#features">Features</a>
+        <a href="#screenshots">Screenshots</a>
+        <a href="#sensors">Sensors</a>
+        <a href="#install">Install</a>
+        <a href="#privacy">Privacy</a>
+      </nav>
+
+      <div class="nav-actions">
+        <a class="btn btn-ghost btn-sm" href="https://github.com/danny19862025/prism-monitor" target="_blank" rel="noopener noreferrer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.27-.01-1.18-.02-2.14-3.2.69-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.76 2.69 1.25 3.35.96.1-.74.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.18-3.08-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.17 1.18.92-.26 1.91-.38 2.89-.39.98.01 1.97.13 2.89.39 2.2-1.49 3.16-1.18 3.16-1.18.63 1.58.24 2.75.12 3.04.74.8 1.18 1.82 1.18 3.08 0 4.41-2.69 5.39-5.26 5.67.42.36.79 1.06.79 2.14 0 1.55-.01 2.8-.01 3.18 0 .31.21.68.8.56C20.22 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/>
+          </svg>
+          <span>GitHub</span>
+        </a>
+        <a class="btn btn-primary btn-sm" href="#install">Download</a>
+      </div>
+
+      <button type="button" class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="mobile-menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+
+    <div class="mobile-menu" id="mobile-menu" hidden>
+      <a href="#features">Features</a>
+      <a href="#screenshots">Screenshots</a>
+      <a href="#sensors">Sensors</a>
+      <a href="#install">Install</a>
+      <a href="#privacy">Privacy</a>
+      <div class="mobile-menu-actions">
+        <a class="btn btn-ghost" href="https://github.com/danny19862025/prism-monitor" target="_blank" rel="noopener noreferrer">View on GitHub</a>
+        <a class="btn btn-primary" href="#install">Download v1.1.0</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- Hero Section -->
+    <section class="hero section">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <div class="release-pill">
+            <span class="pulse-dot" aria-hidden="true"></span>
+            <span id="hero-release-badge">v1.1.0 &middot; Windows 10/11 &amp; Linux &middot; GPL-3.0</span>
+          </div>
+
+          <h1 class="hero-title">
+            Quiet telemetry for <span class="text-accent">desktop</span> and <span class="text-warm">game.</span>
+          </h1>
+
+          <p class="hero-subtitle">
+            An always-on-top widget that shows live <strong>game FPS</strong>, <strong>CPU &amp; GPU temperature and load</strong>, <strong>memory</strong>, <strong>fan speeds</strong>, and <strong>controller, keyboard &amp; headset batteries</strong>. It sits quietly on your wallpaper or over your game &mdash; reading sensors only, never changing fan speeds or clocks.
+          </p>
+
+          <div class="hero-ctas">
+            <a class="btn btn-primary btn-lg" id="hero-win-download" href="https://github.com/danny19862025/prism-monitor/releases/download/v1.1.0/PrismMonitor-Setup-1.1.0.exe">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M3 5.5L10.5 4.4V11.5H3V5.5ZM11.5 4.25L21 2.9V11.5H11.5V4.25ZM3 12.5H10.5V19.6L3 18.5V12.5ZM11.5 12.5H21V21.1L11.5 19.75V12.5Z"/>
+              </svg>
+              <span>Download for Windows</span>
+            </a>
+            <a class="btn btn-secondary btn-lg" href="#install" data-jump-tab="linux">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="4 17 10 11 4 5"/>
+                <line x1="12" y1="19" x2="20" y2="19"/>
+              </svg>
+              <span>Install on Linux</span>
+            </a>
+            <a class="btn btn-ghost btn-lg" href="https://github.com/danny19862025/prism-monitor" target="_blank" rel="noopener noreferrer">
+              <span>View on GitHub</span>
+            </a>
+          </div>
+
+          <ul class="trust-bar" aria-label="Core guarantees">
+            <li>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
+              Zero telemetry
+            </li>
+            <li>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
+              Read-only sensors
+            </li>
+            <li>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
+              Free &amp; open source (GPL-3.0)
+            </li>
+          </ul>
+        </div>
+
+        <!-- Interactive Live Widget Preview -->
+        <div class="hero-preview">
+          <div class="simulator-frame" aria-label="Interactive Prism Monitor widget preview">
+            <div class="simulator-toolbar">
+              <div class="sim-controls-group" role="group" aria-label="Widget mode">
+                <button type="button" class="sim-btn is-active" data-sim-mode="monitor">Monitor (CPU °C)</button>
+                <button type="button" class="sim-btn" data-sim-mode="gaming">Gaming (FPS)</button>
+              </div>
+              <div class="sim-controls-group" role="group" aria-label="Widget look">
+                <button type="button" class="sim-btn is-active" data-sim-look="poster">Poster</button>
+                <button type="button" class="sim-btn" data-sim-look="card">Card</button>
+              </div>
+              <div class="sim-controls-group" role="group" aria-label="Poster backdrop panel" id="panel-control-group">
+                <button type="button" class="sim-btn is-active" data-sim-panel="off">Panel Off</button>
+                <button type="button" class="sim-btn" data-sim-panel="45">45% Panel</button>
+              </div>
+              <div class="sim-swatches" role="group" aria-label="Accent colour">
+                <button type="button" class="swatch is-active" data-accent="ice" style="--dot:#8cd0fb" title="Ice Blue (#8cd0fb)" aria-label="Ice blue accent"></button>
+                <button type="button" class="swatch" data-accent="amber" style="--dot:#f2c15a" title="Warm Amber (#f2c15a)" aria-label="Warm amber accent"></button>
+                <button type="button" class="swatch" data-accent="mint" style="--dot:#7ee0b4" title="Mint (#7ee0b4)" aria-label="Mint accent"></button>
+                <button type="button" class="swatch" data-accent="mono" style="--dot:#e2e8f0" title="Monochrome (#e2e8f0)" aria-label="Monochrome accent"></button>
+              </div>
+            </div>
+
+            <div class="wallpaper-stage" id="wallpaper-stage" data-mode="monitor" data-look="poster" data-panel="off" data-accent="ice">
+              <!-- Live Widget -->
+              <div class="prism-widget" id="live-widget">
+                <!-- Poster Look Content -->
+                <div class="widget-poster-view" id="poster-view">
+                  <div class="poster-rail" id="sim-vertical-caption">MONITOR</div>
+
+                  <div class="poster-body">
+                    <div class="poster-hero-row">
+                      <div class="poster-hero-meta">
+                        <div class="poster-label" id="sim-hero-label">CPU</div>
+                        <div class="poster-subline" id="sim-hero-subline">35% LOAD</div>
+                        <div class="poster-rule"></div>
+                      </div>
+                      <div class="poster-big-wrap">
+                        <span class="poster-big-num" id="sim-big-num">63</span>
+                        <span class="poster-big-unit" id="sim-big-unit">&deg;C</span>
+                      </div>
+                    </div>
+
+                    <div class="poster-section">
+                      <div class="poster-section-head">SYSTEM</div>
+                      <div class="poster-row" id="sim-cpu-row" hidden>
+                        <span class="row-k">CPU</span>
+                        <span class="row-v" id="sim-cpu-val">35% &middot; 63&deg;C</span>
+                      </div>
+                      <div class="poster-row">
+                        <span class="row-k">GPU</span>
+                        <span class="row-v is-warm" id="sim-gpu-val">92% &middot; 70&deg;C</span>
+                      </div>
+                      <div class="poster-row">
+                        <span class="row-k">MEMORY</span>
+                        <span class="row-v" id="sim-mem-val">9.4 / 32 GB</span>
+                      </div>
+                    </div>
+
+                    <div class="poster-section">
+                      <div class="poster-section-head">FANS</div>
+                      <div class="poster-row">
+                        <span class="row-k">CPU FAN</span>
+                        <span class="row-v" id="sim-fan1-val">1411 RPM</span>
+                      </div>
+                      <div class="poster-row">
+                        <span class="row-k">CASE FAN 1</span>
+                        <span class="row-v" id="sim-fan2-val">980 RPM</span>
+                      </div>
+                    </div>
+
+                    <div class="poster-section">
+                      <div class="poster-section-head">BATTERIES</div>
+                      <div class="poster-row">
+                        <span class="row-k">MX MASTER 3S</span>
+                        <span class="row-v-bat">
+                          <span class="bat-text is-low">12%</span>
+                          <span class="bat-track"><span class="bat-fill is-low" style="width:12%"></span></span>
+                        </span>
+                      </div>
+                      <div class="poster-row">
+                        <span class="row-k">WH-1000XM5</span>
+                        <span class="row-v-bat">
+                          <span class="bat-text">80%</span>
+                          <span class="bat-track"><span class="bat-fill" style="width:80%"></span></span>
+                        </span>
+                      </div>
+                      <div class="poster-row">
+                        <span class="row-k">XBOX WIRELESS CONTR&hellip;</span>
+                        <span class="row-v-bat">
+                          <span class="bat-text is-mid">35%</span>
+                          <span class="bat-track"><span class="bat-fill is-mid" style="width:35%"></span></span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card Look Content -->
+                <div class="widget-card-view" id="card-view" hidden>
+                  <div class="card-top-bar">
+                    <span class="card-title">PRISM MONITOR</span>
+                    <span class="card-pill" id="card-mode-pill">MONITOR &middot; 1.0s</span>
+                  </div>
+
+                  <div class="card-tile-grid">
+                    <div class="card-tile">
+                      <div class="tile-head">
+                        <span>CPU</span>
+                        <strong id="card-cpu-val">63&deg;C &middot; 35%</strong>
+                      </div>
+                      <svg class="sparkline" viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden="true">
+                        <polyline id="spark-cpu" fill="none" stroke="var(--widget-accent)" stroke-width="1.8" points="0,18 15,17 30,14 45,15 60,12 75,14 90,11 105,13 120,12"/>
+                      </svg>
+                    </div>
+
+                    <div class="card-tile">
+                      <div class="tile-head">
+                        <span>GPU</span>
+                        <strong class="is-warm" id="card-gpu-val">70&deg;C &middot; 92%</strong>
+                      </div>
+                      <svg class="sparkline" viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden="true">
+                        <polyline id="spark-gpu" fill="none" stroke="#f2c15a" stroke-width="1.8" points="0,10 15,9 30,11 45,8 60,7 75,9 90,6 105,8 120,7"/>
+                      </svg>
+                    </div>
+
+                    <div class="card-tile" id="card-third-tile">
+                      <div class="tile-head">
+                        <span id="card-third-label">MEMORY</span>
+                        <strong id="card-third-val">9.4 / 32 GB</strong>
+                      </div>
+                      <svg class="sparkline" viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden="true">
+                        <polyline id="spark-third" fill="none" stroke="#94a3b8" stroke-width="1.8" points="0,18 15,18 30,17 45,17 60,16 75,16 90,16 105,15 120,15"/>
+                      </svg>
+                    </div>
+                  </div>
+
+                  <div class="card-footer-rows">
+                    <div class="card-mini-row">
+                      <span>FANS</span>
+                      <span id="card-fans-val">CPU 1411 RPM &middot; CASE 980 RPM</span>
+                    </div>
+                    <div class="card-mini-row">
+                      <span>BATTERIES</span>
+                      <span>MX 12% &middot; XM5 80% &middot; XBOX 35%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="stage-caption">
+                <span>Interactive simulation &middot; Live 1s poll cadence</span>
+                <span class="stage-hint">Try switching Mode or Look above</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Real Screenshots Section -->
+    <section class="section" id="screenshots">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">REAL SCREENSHOTS</span>
+          <h2>One widget that adapts between desktop calm and gaming focus.</h2>
+          <p>Captured directly from Prism Monitor in the Poster look. Unavailable readings are omitted automatically so the layout stays crisp and clutter-free.</p>
+        </div>
+
+        <div class="screenshots-grid">
+          <figure class="shot-card reveal">
+            <div class="shot-media">
+              <img src="assets/poster.png" alt="Prism Monitor in Poster look showing CPU temperature 63 degrees Celsius as the large number, GPU, memory, fans, and Bluetooth battery levels" loading="lazy" width="340" height="404">
+            </div>
+            <figcaption class="shot-caption">
+              <h3>At rest on the desktop</h3>
+              <p>Shows CPU or GPU temperature as the anchor numeral alongside system usage, motherboard fans, and peripheral batteries.</p>
+            </figcaption>
+          </figure>
+
+          <figure class="shot-card reveal">
+            <div class="shot-media">
+              <img src="assets/poster-gaming.png" alt="Prism Monitor while gaming showing 142 FPS for Cyberpunk 2077 with 7.0 ms frame time, CPU, GPU, memory, fans, and batteries" loading="lazy" width="340" height="404">
+            </div>
+            <figcaption class="shot-caption">
+              <h3>Automatically switches to FPS while gaming</h3>
+              <p>When a game starts, the big number flips to live FPS and frame time, tucking CPU load and temperature cleanly into the System block.</p>
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Bento Grid -->
+    <section class="section" id="features">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">DESIGNED FOR DAILY DRIVING</span>
+          <h2>Everything you check, nothing you fiddle with.</h2>
+          <p>Built in Python &amp; PySide6 (Qt 6) for crisp high-DPI rendering, fractional scaling, and low idle overhead.</p>
+        </div>
+
+        <div class="bento-grid">
+          <article class="bento-card reveal">
+            <div class="bento-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 15l3-4 3 3 4-5"/></svg>
+            </div>
+            <h3>Poster &amp; Card Looks</h3>
+            <p>Start frameless in <strong>Poster</strong> with bold Barlow typography and a faded anchor numeral, or switch to <strong>Card</strong> for translucent tiles with live history sparklines. Customize size, panel opacity, fonts, and colours.</p>
+          </article>
+
+          <article class="bento-card reveal">
+            <div class="bento-icon is-warm" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            </div>
+            <h3>Game FPS Without Injection</h3>
+            <p>Measures real presentation frame rates via bundled <strong>Intel PresentMon</strong> on Windows (DirectX, Vulkan, OpenGL) and a lightweight <strong>Vulkan layer</strong> on Linux &mdash; including Steam/Proton games with zero launch flags.</p>
+          </article>
+
+          <article class="bento-card reveal">
+            <div class="bento-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="18" height="10" rx="2"/><line x1="22" y1="11" x2="22" y2="13"/><line x1="6" y1="11" x2="6" y2="13"/><line x1="10" y1="11" x2="10" y2="13"/></svg>
+            </div>
+            <h3>Controller &amp; Peripheral Batteries</h3>
+            <p>Check PlayStation and Xbox controllers, Bluetooth mice, keyboards, headsets, and laptop batteries at a glance &mdash; with colour-coded charge bars for low levels.</p>
+          </article>
+
+          <article class="bento-card reveal">
+            <div class="bento-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="14" height="10" rx="2"/><rect x="7" y="10" width="14" height="10" rx="2"/></svg>
+            </div>
+            <h3>Layering &amp; Click-Through</h3>
+            <p>Pin it <strong>On top of windows</strong> over games, keep it <strong>Normal</strong>, or sink it <strong>Behind windows</strong> like a desktop clock. Enable click-through so mouse clicks pass straight to your game.</p>
+          </article>
+
+          <article class="bento-card reveal">
+            <div class="bento-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+            </div>
+            <h3>Native Linux Desktop Widgets</h3>
+            <p>Beyond its standalone window, the Linux installer includes native widget integration for <strong>KDE Plasma 6</strong> and <strong>GNOME 45&ndash;49</strong> fed directly by the background tray process.</p>
+          </article>
+
+          <article class="bento-card reveal">
+            <div class="bento-icon is-warm" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+            </div>
+            <h3>Built-in Keep Awake</h3>
+            <p>Keep your PC awake for a set duration or until a download, render, or running app finishes &mdash; then optionally sleep or shut down automatically, like <code>caffeinate</code> on a Mac.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- What It Reads Matrix -->
+    <section class="section" id="sensors">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">WHAT IT READS</span>
+          <h2>Native sensor pipelines for Windows &amp; Linux.</h2>
+          <p>Hover any row inside the widget to inspect its exact sensor source. No bloated suites or background web views.</p>
+        </div>
+
+        <div class="matrix-wrap reveal">
+          <table class="sensor-table">
+            <thead>
+              <tr>
+                <th scope="col">Metric</th>
+                <th scope="col">Windows 10 / 11</th>
+                <th scope="col">Linux</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">CPU</th>
+                <td>Load from Windows. Temperature, package power, and measured clocks via the optional sensor helper (LibreHardwareMonitor 0.9.6).</td>
+                <td><code>/proc</code>, <code>cpufreq</code>, kernel <code>hwmon</code> (<code>k10temp</code>, <code>coretemp</code>, <code>zenpower</code>), and RAPL package power.</td>
+              </tr>
+              <tr>
+                <th scope="row">GPU</th>
+                <td>AMD driver (ADL): edge &amp; hotspot temperature, load, clock, board power, fan RPM, and VRAM.</td>
+                <td><code>amdgpu</code> sysfs files: temperature, power, clock, fan RPM, load, and VRAM.</td>
+              </tr>
+              <tr>
+                <th scope="row">Memory &amp; Swap</th>
+                <td>Windows memory status and page file usage.</td>
+                <td><code>/proc/meminfo</code> including swap partitions, swap files, and <code>zram</code>.</td>
+              </tr>
+              <tr>
+                <th scope="row">Motherboard Fans</th>
+                <td>Super I/O motherboard fan headers through the elevated sensor helper.</td>
+                <td>Kernel <code>hwmon</code> fan inputs (with Super I/O driver such as <code>nct6775</code> or <code>it87</code>).</td>
+              </tr>
+              <tr>
+                <th scope="row">Game FPS</th>
+                <td>Bundled <strong>Intel PresentMon 2.6.0</strong>: DirectX, Vulkan, and OpenGL titles without DLL injection.</td>
+                <td>Custom lightweight <strong>Vulkan layer</strong>: native Vulkan games and Windows games via Steam/Proton &amp; DXVK.</td>
+              </tr>
+              <tr>
+                <th scope="row">Batteries</th>
+                <td>PlayStation &amp; Xbox controllers, Bluetooth keyboards, mice &amp; headsets, plus laptop battery.</td>
+                <td><strong>UPower</strong> (game controllers, BlueZ devices, Logitech peripherals, and laptop battery).</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Download & Install Section -->
+    <section class="section" id="install">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">GET PRISM MONITOR</span>
+          <h2>Download &amp; install in under a minute.</h2>
+          <p>Latest release: <strong id="install-version-label">v1.1.0</strong> &middot; Licensed under GPL-3.0.</p>
+        </div>
+
+        <div class="install-shell reveal">
+          <div class="os-tabs" role="tablist" aria-label="Installation platform">
+            <button type="button" class="os-tab is-active" role="tab" aria-selected="true" aria-controls="panel-windows" id="tab-windows" data-tab="windows">Windows 10 / 11</button>
+            <button type="button" class="os-tab" role="tab" aria-selected="false" aria-controls="panel-linux" id="tab-linux" data-tab="linux">Linux</button>
+            <button type="button" class="os-tab" role="tab" aria-selected="false" aria-controls="panel-source" id="tab-source" data-tab="source">Build from Source</button>
+          </div>
+
+          <!-- Windows Panel -->
+          <div class="os-panel is-active" id="panel-windows" role="tabpanel" aria-labelledby="tab-windows">
+            <div class="download-cards">
+              <div class="dl-card is-recommended">
+                <div class="dl-card-head">
+                  <span class="dl-badge">Recommended</span>
+                  <span class="dl-size" id="exe-size">22.1 MB</span>
+                </div>
+                <h3>Windows Installer</h3>
+                <p class="dl-filename">PrismMonitor-Setup-1.1.0.exe</p>
+                <p class="dl-desc">Installs for your account with no admin prompt. Includes Start Menu shortcut, optional CPU sensor helper setup, and keeps settings on upgrade.</p>
+                <a class="btn btn-primary btn-block" id="win-installer-link" href="https://github.com/danny19862025/prism-monitor/releases/download/v1.1.0/PrismMonitor-Setup-1.1.0.exe">
+                  Download Installer (.exe)
+                </a>
+                <div class="sha-box">
+                  <div class="sha-label">
+                    <span>SHA-256</span>
+                    <button type="button" class="copy-btn" data-copy="ec979fe888812175b2700983867ae80680af4489bdca8114c715759bad8b5d34">Copy</button>
+                  </div>
+                  <code id="exe-sha">ec979fe888812175b2700983867ae80680af4489bdca8114c715759bad8b5d34</code>
+                </div>
+              </div>
+
+              <div class="dl-card">
+                <div class="dl-card-head">
+                  <span class="dl-badge is-neutral">Portable</span>
+                  <span class="dl-size" id="zip-size">28.6 MB</span>
+                </div>
+                <h3>Portable Archive</h3>
+                <p class="dl-filename">PrismMonitor-windows.zip</p>
+                <p class="dl-desc">Prefer no installer? Extract the folder anywhere, keep its files together, and launch <code>PrismMonitor\PrismMonitor.exe</code> directly.</p>
+                <a class="btn btn-secondary btn-block" id="win-zip-link" href="https://github.com/danny19862025/prism-monitor/releases/download/v1.1.0/PrismMonitor-windows.zip">
+                  Download Portable (.zip)
+                </a>
+                <div class="sha-box">
+                  <div class="sha-label">
+                    <span>SHA-256</span>
+                    <button type="button" class="copy-btn" data-copy="5aa896954a74e361d9a921d92d8881825733d8c315820c0bf1dfab92bbec9a93">Copy</button>
+                  </div>
+                  <code id="zip-sha">5aa896954a74e361d9a921d92d8881825733d8c315820c0bf1dfab92bbec9a93</code>
+                </div>
+              </div>
+            </div>
+
+            <ol class="setup-steps">
+              <li>
+                <strong>Run the installer:</strong> Installs for your Windows user without an admin prompt (or pick <em>all users</em> in the first dialog).
+              </li>
+              <li>
+                <strong>Verify SmartScreen if shown:</strong> Because the installer is not code-signed, Windows SmartScreen may warn. Verify the SHA-256 checksum above, then click <em>More info &rarr; Run anyway</em>.
+              </li>
+              <li>
+                <strong>Launch Prism Monitor:</strong> Appears at the top-right of your main screen with a four-bar icon in the system tray.
+              </li>
+              <li>
+                <strong>Enable CPU temps &amp; motherboard fans (optional):</strong> Keep <em>Set up CPU sensors</em> ticked in the installer or click the first-run tray notification. Windows asks for elevation once; afterwards it starts automatically with no prompt.
+              </li>
+            </ol>
+          </div>
+
+          <!-- Linux Panel -->
+          <div class="os-panel" id="panel-linux" role="tabpanel" aria-labelledby="tab-linux" hidden>
+            <p class="linux-intro">
+              Tested on Arch Linux with KDE Plasma 6 (Wayland). <strong>No administrator rights are needed</strong> at runtime &mdash; all sensors come directly from kernel interfaces.
+            </p>
+
+            <div class="step-block">
+              <div class="step-header">
+                <h3>1. Install dependencies for your distribution</h3>
+                <div class="distro-pills" role="group" aria-label="Linux distribution">
+                  <button type="button" class="distro-pill is-active" data-distro="arch">Arch / Manjaro / CachyOS</button>
+                  <button type="button" class="distro-pill" data-distro="debian">Debian / Ubuntu / Mint</button>
+                  <button type="button" class="distro-pill" data-distro="fedora">Fedora / Nobara</button>
+                  <button type="button" class="distro-pill" data-distro="opensuse">openSUSE</button>
+                </div>
+              </div>
+
+              <div class="code-box">
+                <pre><code id="linux-deps-cmd">sudo pacman -S --needed git python gcc vulkan-icd-loader vulkan-tools</code></pre>
+                <button type="button" class="copy-btn" data-copy-target="linux-deps-cmd">Copy</button>
+              </div>
+              <p class="distro-note" id="linux-gpu-note">
+                For game FPS, ensure your GPU Vulkan driver is installed: <code>vulkan-radeon</code> (AMD), <code>vulkan-intel</code> (Intel), or <code>nvidia-utils</code> (NVIDIA).
+              </p>
+            </div>
+
+            <div class="step-block">
+              <h3>2. Clone &amp; run the installer</h3>
+              <div class="code-box">
+                <pre><code id="linux-install-cmd">git clone https://github.com/danny19862025/prism-monitor.git
+cd prism-monitor
+./Install-Linux.sh</code></pre>
+                <button type="button" class="copy-btn" data-copy-target="linux-install-cmd">Copy</button>
+              </div>
+              <p class="step-note">
+                Creates an isolated Python environment, compiles the Vulkan FPS layer, adds the app launcher, enables autostart, and installs KDE Plasma 6 / GNOME desktop widgets where detected. Safe to re-run for updates after <code>git pull</code>.
+              </p>
+            </div>
+
+            <div class="step-block">
+              <h3>3. Enable Game FPS &amp; Desktop Widgets</h3>
+              <ul class="linux-tips">
+                <li><strong>Game FPS:</strong> Right-click the widget and enable <strong>Show FPS</strong>. Newly launched Vulkan &amp; Steam/Proton games are tracked automatically with no launch options.</li>
+                <li><strong>KDE Plasma 6:</strong> Right-click desktop &rarr; <em>Add or Manage Widgets</em> &rarr; search <strong>Prism Monitor</strong> and drag it onto your wallpaper.</li>
+                <li><strong>GNOME 45&ndash;49:</strong> Sign out and back in once after installing and the desktop widget appears cleanly behind your windows.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Source Panel -->
+          <div class="os-panel" id="panel-source" role="tabpanel" aria-labelledby="tab-source" hidden>
+            <div class="source-grid">
+              <div class="step-block">
+                <h3>Run or package on Windows (Python 3.12&ndash;3.14)</h3>
+                <div class="code-box">
+                  <pre><code id="src-win-cmd">git clone https://github.com/danny19862025/prism-monitor.git
+cd prism-monitor
+Run-PrismMonitor.cmd      :: set up venv and run from source
+Build-Windows.cmd         :: run tests and build dist\PrismMonitor-windows.zip</code></pre>
+                  <button type="button" class="copy-btn" data-copy-target="src-win-cmd">Copy</button>
+                </div>
+                <p class="step-note">
+                  With <a href="https://jrsoftware.org/isinfo.php" target="_blank" rel="noopener noreferrer">Inno Setup 6</a> installed (<code>winget install JRSoftware.InnoSetup</code>), the build script also generates <code>dist\PrismMonitor-Setup-&lt;version&gt;.exe</code>.
+                </p>
+              </div>
+
+              <div class="step-block">
+                <h3>Run the test suite (any platform)</h3>
+                <div class="code-box">
+                  <pre><code id="src-test-cmd">QT_QPA_PLATFORM=offscreen .venv/bin/python -m unittest discover -s tests -v</code></pre>
+                  <button type="button" class="copy-btn" data-copy-target="src-test-cmd">Copy</button>
+                </div>
+                <p class="step-note">
+                  Dive deeper into settings, sensor helper architecture, and troubleshooting in the <a href="https://github.com/danny19862025/prism-monitor/blob/main/docs/GUIDE.md" target="_blank" rel="noopener noreferrer">full documentation guide</a>.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Privacy & Safety Section -->
+    <section class="section" id="privacy">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">PRIVACY &amp; SAFETY</span>
+          <h2>Transparent, local-only, and strictly read-only.</h2>
+          <p>Hardware monitoring tools run close to your system. Prism Monitor is engineered so you can verify every boundary.</p>
+        </div>
+
+        <div class="privacy-grid">
+          <article class="privacy-card reveal">
+            <h3>Local-only by design</h3>
+            <p>Everything stays on your PC. Prism Monitor contains zero analytics, ads, or background tracking. Its only network request goes to GitHub when you explicitly click <strong>Check for updates</strong>.</p>
+          </article>
+
+          <article class="privacy-card reveal">
+            <h3>Strictly read-only sensors</h3>
+            <p>Prism Monitor never alters fan curves, voltages, or clock speeds, and never installs kernel drivers. On Windows it uses LibreHardwareMonitorLib (and PawnIO if you choose to install it); on Linux it reads standard kernel sysfs/hwmon.</p>
+          </article>
+
+          <article class="privacy-card reveal">
+            <h3>Sandboxed privilege separation</h3>
+            <p>The desktop widget runs unprivileged. On Windows, optional elevated sensor reading lives in a small C# helper copied to protected <code>Program Files</code>, serving JSON over a user-scoped named pipe with no network access.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <div class="brand">
+          <span class="brand-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="12" width="3" height="8" rx="1" fill="#8cd0fb"/>
+              <rect x="8" y="7" width="3" height="13" rx="1" fill="#8cd0fb"/>
+              <rect x="13" y="4" width="3" height="16" rx="1" fill="#e6f2fa"/>
+              <rect x="18" y="9" width="3" height="11" rx="1" fill="#f2c15a"/>
+            </svg>
+          </span>
+          <span class="brand-name">PRISM MONITOR</span>
+        </div>
+        <p class="footer-tagline">
+          Free &amp; open-source desktop telemetry widget for Windows and Linux.
+        </p>
+      </div>
+
+      <div class="footer-links">
+        <a href="https://github.com/danny19862025/prism-monitor" target="_blank" rel="noopener noreferrer">GitHub Repo</a>
+        <a href="https://github.com/danny19862025/prism-monitor/releases/latest" target="_blank" rel="noopener noreferrer">Latest Release</a>
+        <a href="https://github.com/danny19862025/prism-monitor/blob/main/docs/GUIDE.md" target="_blank" rel="noopener noreferrer">User Guide</a>
+        <a href="https://github.com/danny19862025/prism-monitor/issues" target="_blank" rel="noopener noreferrer">Issues</a>
+        <a href="https://github.com/danny19862025/prism-monitor/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">GPL-3.0 License</a>
+        <a class="coffee-link" href="https://buymeacoffee.com/danny1986" target="_blank" rel="noopener noreferrer">Buy Me a Coffee &#9749;</a>
+      </div>
+    </div>
+
+    <div class="container footer-bottom">
+      <p>
+        Bundled components: LibreHardwareMonitorLib (MPL-2.0), Intel PresentMon (MIT), Qt / PySide6 (LGPL-3.0 / GPL), Python (PSF), Barlow font (OFL).
+        See <a href="https://github.com/danny19862025/prism-monitor/blob/main/THIRD_PARTY_NOTICES.md" target="_blank" rel="noopener noreferrer">THIRD_PARTY_NOTICES.md</a>.
+      </p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
