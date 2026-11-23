@@ -1,4 +1,4 @@
-> **Website:** [https://danny19862025.github.io/prism-monitor/](https://danny19862025.github.io/prism-monitor/)
+> 🌐 **[Prism Monitor Website — danny19862025.github.io/prism-monitor](https://danny19862025.github.io/prism-monitor/)**
 
 # Prism Monitor
 
