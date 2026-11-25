@@ -1,298 +1,1618 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="midnight">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Prism Monitor — Quiet Telemetry for Windows &amp; Linux</title>
-  <meta name="description" content="Always-on-top desktop widget showing game FPS, CPU and GPU temperature and load, memory, fan speeds, and controller or Bluetooth batteries on Windows 10/11 and Linux. Read-only, open source (GPL-3.0).">
-  <meta name="theme-color" content="#0c1722">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prism Monitor — Quiet Desktop Telemetry for Windows &amp; Linux</title>
+  <meta name="description" content="An always-on-top, open-source desktop widget showing game FPS, CPU/GPU temps, fan speeds, memory, and Bluetooth batteries on Windows and Linux. Read-only, zero telemetry." />
+  <meta name="theme-color" content="#090c12" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ==========================================================================
+       1. THEME TOKENS (Midnight, Graphite, Nord, Dracula, Rosé Pine, Light)
+       ========================================================================== */
+    :root,
+    [data-theme="midnight"] {
+      --bg: #070a10;
+      --bg-elevated: #0d121c;
+      --bg-card: rgba(15, 21, 33, 0.72);
+      --bg-card-solid: #0f1521;
+      --bg-subtle: rgba(255, 255, 255, 0.035);
+      --border: rgba(255, 255, 255, 0.09);
+      --border-strong: rgba(255, 255, 255, 0.16);
+      --text: #eef2f9;
+      --text-muted: #93a1b8;
+      --text-faint: #5f6d85;
+      --accent: #38bdf8;
+      --accent-2: #818cf8;
+      --accent-soft: rgba(56, 189, 248, 0.13);
+      --accent-glow: rgba(56, 189, 248, 0.22);
+      --good: #34d399;
+      --warn: #fbbf24;
+      --hot: #fb7185;
+      --term-bg: #05070c;
+      --hero-grid: rgba(148, 163, 184, 0.06);
+      --shadow-lg: 0 24px 70px -20px rgba(0, 0, 0, 0.75);
+      color-scheme: dark;
+    }
 
-  <!-- Open Graph -->
-  <meta property="og:title" content="Prism Monitor — Quiet Telemetry for Desktop and Game">
-  <meta property="og:description" content="A quiet desktop widget for Windows 10/11 and Linux showing game FPS, CPU/GPU temperature and load, memory, fan speeds, and peripheral batteries.">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://github.com/danny19862025/prism-monitor">
-  <meta property="og:image" content="assets/poster-gaming.png">
+    [data-theme="graphite"] {
+      --bg: #111214;
+      --bg-elevated: #181a1d;
+      --bg-card: rgba(27, 29, 34, 0.78);
+      --bg-card-solid: #1b1d22;
+      --bg-subtle: rgba(255, 255, 255, 0.04);
+      --border: rgba(255, 255, 255, 0.09);
+      --border-strong: rgba(255, 255, 255, 0.17);
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --text-faint: #6b7280;
+      --accent: #e5e7eb;
+      --accent-2: #94a3b8;
+      --accent-soft: rgba(229, 231, 235, 0.11);
+      --accent-glow: rgba(229, 231, 235, 0.14);
+      --good: #4ade80;
+      --warn: #facc15;
+      --hot: #f87171;
+      --term-bg: #0c0d0f;
+      --hero-grid: rgba(255, 255, 255, 0.045);
+      --shadow-lg: 0 24px 70px -20px rgba(0, 0, 0, 0.8);
+      color-scheme: dark;
+    }
 
-  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+    [data-theme="nord"] {
+      --bg: #242933;
+      --bg-elevated: #2e3440;
+      --bg-card: rgba(59, 66, 82, 0.62);
+      --bg-card-solid: #323946;
+      --bg-subtle: rgba(216, 222, 233, 0.05);
+      --border: rgba(216, 222, 233, 0.12);
+      --border-strong: rgba(216, 222, 233, 0.22);
+      --text: #eceff4;
+      --text-muted: #a5b1c2;
+      --text-faint: #7b88a1;
+      --accent: #88c0d0;
+      --accent-2: #81a1c1;
+      --accent-soft: rgba(136, 192, 208, 0.15);
+      --accent-glow: rgba(136, 192, 208, 0.24);
+      --good: #a3be8c;
+      --warn: #ebcb8b;
+      --hot: #bf616a;
+      --term-bg: #1e222a;
+      --hero-grid: rgba(216, 222, 233, 0.055);
+      --shadow-lg: 0 24px 70px -20px rgba(15, 18, 24, 0.72);
+      color-scheme: dark;
+    }
 
-  <!-- Typography: Barlow (Prism Monitor's signature Poster font) + JetBrains Mono -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    [data-theme="dracula"] {
+      --bg: #191a24;
+      --bg-elevated: #21222c;
+      --bg-card: rgba(40, 42, 54, 0.76);
+      --bg-card-solid: #282a36;
+      --bg-subtle: rgba(248, 248, 242, 0.04);
+      --border: rgba(189, 147, 249, 0.16);
+      --border-strong: rgba(189, 147, 249, 0.28);
+      --text: #f8f8f2;
+      --text-muted: #a9b1d6;
+      --text-faint: #6272a4;
+      --accent: #bd93f9;
+      --accent-2: #ff79c6;
+      --accent-soft: rgba(189, 147, 249, 0.16);
+      --accent-glow: rgba(189, 147, 249, 0.24);
+      --good: #50fa7b;
+      --warn: #f1fa8c;
+      --hot: #ff5555;
+      --term-bg: #15161e;
+      --hero-grid: rgba(189, 147, 249, 0.06);
+      --shadow-lg: 0 24px 70px -20px rgba(10, 10, 18, 0.8);
+      color-scheme: dark;
+    }
 
-  <link rel="stylesheet" href="styles.css">
+    [data-theme="rose-pine"] {
+      --bg: #191724;
+      --bg-elevated: #1f1d2e;
+      --bg-card: rgba(38, 35, 58, 0.74);
+      --bg-card-solid: #26233a;
+      --bg-subtle: rgba(224, 222, 244, 0.04);
+      --border: rgba(235, 188, 186, 0.14);
+      --border-strong: rgba(235, 188, 186, 0.25);
+      --text: #e0def4;
+      --text-muted: #908caa;
+      --text-faint: #6e6a86;
+      --accent: #ebbcba;
+      --accent-2: #c4a7e7;
+      --accent-soft: rgba(235, 188, 186, 0.15);
+      --accent-glow: rgba(235, 188, 186, 0.22);
+      --good: #9ccfd8;
+      --warn: #f6c177;
+      --hot: #eb6f92;
+      --term-bg: #13111c;
+      --hero-grid: rgba(235, 188, 186, 0.05);
+      --shadow-lg: 0 24px 70px -20px rgba(10, 8, 18, 0.8);
+      color-scheme: dark;
+    }
+
+    [data-theme="light"] {
+      --bg: #f6f8fb;
+      --bg-elevated: #ffffff;
+      --bg-card: rgba(255, 255, 255, 0.88);
+      --bg-card-solid: #ffffff;
+      --bg-subtle: rgba(15, 23, 42, 0.04);
+      --border: rgba(15, 23, 42, 0.1);
+      --border-strong: rgba(15, 23, 42, 0.18);
+      --text: #0f172a;
+      --text-muted: #475569;
+      --text-faint: #64748b;
+      --accent: #0284c7;
+      --accent-2: #4f46e5;
+      --accent-soft: rgba(2, 132, 199, 0.11);
+      --accent-glow: rgba(2, 132, 199, 0.18);
+      --good: #059669;
+      --warn: #d97706;
+      --hot: #e11d48;
+      --term-bg: #0f172a;
+      --hero-grid: rgba(15, 23, 42, 0.055);
+      --shadow-lg: 0 24px 60px -20px rgba(15, 23, 42, 0.15);
+      color-scheme: light;
+    }
+
+    /* ==========================================================================
+       2. RESET & BASE TYPOGRAPHY
+       ========================================================================== */
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      transition: background-color 180ms ease, color 180ms ease;
+      overflow-x: hidden;
+    }
+
+    code, pre, .mono {
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; color: inherit; cursor: pointer; }
+
+    .container {
+      width: 100%;
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Background subtle grid + radial ambient glow */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+      background-image:
+        radial-gradient(ellipse 70% 45% at 50% -10%, var(--accent-glow), transparent 70%),
+        linear-gradient(to right, var(--hero-grid) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--hero-grid) 1px, transparent 1px);
+      background-size: 100% 100%, 44px 44px, 44px 44px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.35) 55%, transparent 100%);
+    }
+
+    /* ==========================================================================
+       3. TOP NAVBAR
+       ========================================================================== */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      background: color-mix(in srgb, var(--bg) 78%, transparent);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 62px;
+      gap: 16px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-mark {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      background: var(--bg-card-solid);
+      border: 1px solid var(--border-strong);
+      display: grid;
+      place-items: center;
+      box-shadow: 0 0 18px var(--accent-soft);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      font-size: 13.5px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .star-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 34px;
+      padding: 0 11px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-subtle);
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text-muted);
+      transition: border-color 140ms ease, color 140ms ease, background 140ms ease;
+    }
+
+    .star-badge:hover {
+      border-color: var(--border-strong);
+      color: var(--text);
+    }
+
+    .star-badge .star-count {
+      font-family: "JetBrains Mono", monospace;
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      height: 40px;
+      padding: 0 16px;
+      border-radius: 9px;
+      font-size: 13.5px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      transition: transform 120ms ease, background 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+      white-space: nowrap;
+    }
+
+    .btn:active { transform: translateY(1px); }
+
+    .btn-sm { height: 34px; padding: 0 13px; font-size: 13px; border-radius: 8px; }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #071019;
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent), 0 8px 24px -8px var(--accent-glow);
+    }
+    [data-theme="light"] .btn-primary { color: #ffffff; }
+    [data-theme="graphite"] .btn-primary { color: #111214; }
+    .btn-primary:hover {
+      filter: brightness(1.07);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: var(--bg-card);
+      border-color: var(--border-strong);
+      color: var(--text);
+    }
+    .btn-secondary:hover {
+      border-color: var(--accent);
+      background: var(--bg-elevated);
+    }
+
+    /* Theme switcher pill bar */
+    .theme-bar {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      backdrop-filter: blur(10px);
+    }
+
+    .theme-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 26px;
+      padding: 0 10px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      background: transparent;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+    }
+
+    .theme-chip:hover { color: var(--text); }
+
+    .theme-chip.active {
+      background: var(--accent-soft);
+      border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+      color: var(--text);
+    }
+
+    .swatch {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      flex-shrink: 0;
+    }
+
+    /* ==========================================================================
+       4. HERO SECTION
+       ========================================================================== */
+    .hero {
+      padding: 68px 0 48px;
+      text-align: center;
+    }
+
+    .release-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-card);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 22px;
+    }
+
+    .release-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--good);
+      box-shadow: 0 0 10px var(--good);
+    }
+
+    .hero h1 {
+      margin: 0 auto 18px;
+      max-width: 820px;
+      font-size: clamp(2.35rem, 5.2vw, 4rem);
+      line-height: 1.07;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+
+    .hero h1 .gradient-text {
+      background: linear-gradient(110deg, var(--accent) 0%, var(--accent-2) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero-sub {
+      margin: 0 auto 30px;
+      max-width: 650px;
+      font-size: clamp(1rem, 1.5vw, 1.15rem);
+      color: var(--text-muted);
+      line-height: 1.65;
+    }
+
+    .hero-cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .copy-snippet {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      height: 40px;
+      padding: 0 8px 0 14px;
+      border-radius: 9px;
+      border: 1px solid var(--border-strong);
+      background: var(--term-bg);
+      color: #dbe7f5;
+      font-size: 12.5px;
+      max-width: 100%;
+    }
+
+    .copy-snippet code {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 340px;
+    }
+
+    .copy-snippet .prompt-char { color: var(--accent); user-select: none; }
+
+    .copy-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      height: 28px;
+      padding: 0 9px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.06);
+      color: #cbd5e1;
+      font-size: 11.5px;
+      font-weight: 500;
+      transition: background 120ms ease, color 120ms ease;
+    }
+    .copy-btn:hover { background: rgba(255, 255, 255, 0.13); color: #fff; }
+    .copy-btn.copied { color: var(--good); border-color: color-mix(in srgb, var(--good) 45%, transparent); }
+
+    .hero-theme-wrap {
+      display: flex;
+      justify-content: center;
+      margin: 18px 0 38px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    /* ==========================================================================
+       5. HERO INTERACTIVE SHOWCASE
+       ========================================================================== */
+    .showcase-shell {
+      position: relative;
+      border-radius: 16px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-card);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: var(--shadow-lg), 0 0 0 1px var(--accent-soft);
+      overflow: hidden;
+      text-align: left;
+    }
+
+    .showcase-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-subtle);
+    }
+
+    .window-dots {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .window-dots span {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--border-strong);
+    }
+    .window-dots span:nth-child(1) { background: #ff5f56; opacity: 0.85; }
+    .window-dots span:nth-child(2) { background: #ffbd2e; opacity: 0.85; }
+    .window-dots span:nth-child(3) { background: #27c93f; opacity: 0.85; }
+
+    .showcase-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      background: var(--bg-elevated);
+      padding: 3px;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+    }
+
+    .showcase-tab {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 12.5px;
+      font-weight: 500;
+      padding: 6px 12px;
+      border-radius: 7px;
+      transition: background 140ms ease, color 140ms ease;
+    }
+    .showcase-tab:hover { color: var(--text); }
+    .showcase-tab.active {
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .showcase-meta {
+      font-size: 11.5px;
+      color: var(--text-faint);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--good);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(0.85); }
+    }
+
+    .showcase-stage {
+      min-height: 410px;
+      padding: 28px;
+      display: grid;
+      align-items: center;
+      position: relative;
+      background:
+        radial-gradient(circle at 80% 20%, var(--accent-soft), transparent 52%),
+        radial-gradient(circle at 15% 85%, color-mix(in srgb, var(--accent-2) 12%, transparent), transparent 50%);
+    }
+
+    .showcase-pane { display: none; }
+    .showcase-pane.active {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 28px;
+      align-items: center;
+      animation: fadeUp 180ms ease-out;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Interactive Poster Widget Simulation */
+    .desktop-canvas {
+      position: relative;
+      border-radius: 13px;
+      border: 1px solid var(--border);
+      background:
+        radial-gradient(circle at 22% 24%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 45%),
+        radial-gradient(circle at 82% 76%, color-mix(in srgb, var(--accent-2) 20%, transparent), transparent 45%),
+        var(--bg-elevated);
+      padding: 24px;
+      min-height: 330px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .poster-widget {
+      position: relative;
+      width: 100%;
+      max-width: 340px;
+      padding: 20px 22px;
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--bg) 52%, transparent);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+    }
+
+    .poster-big-num {
+      position: absolute;
+      top: 8px;
+      right: 16px;
+      font-family: "Barlow", "Inter", sans-serif;
+      font-weight: 800;
+      font-size: 86px;
+      line-height: 0.9;
+      letter-spacing: -0.04em;
+      color: var(--accent);
+      opacity: 0.24;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .poster-kicker {
+      font-family: "Barlow", sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-bottom: 4px;
+    }
+
+    .poster-hero-readout {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .poster-hero-val {
+      font-family: "Barlow", sans-serif;
+      font-size: 44px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
+
+    .poster-hero-unit {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 13px;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .poster-rows {
+      display: grid;
+      gap: 8px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .poster-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12.5px;
+      padding-top: 7px;
+      border-top: 1px solid var(--border);
+    }
+
+    .poster-row-label {
+      color: var(--text-muted);
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      font-size: 11.5px;
+      text-transform: uppercase;
+    }
+
+    .poster-row-val {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 12px;
+      color: var(--text);
+    }
+
+    .showcase-copy h3 {
+      margin: 0 0 10px;
+      font-size: 22px;
+      letter-spacing: -0.025em;
+    }
+
+    .showcase-copy p {
+      margin: 0 0 18px;
+      color: var(--text-muted);
+      font-size: 14.5px;
+    }
+
+    .spec-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 10px;
+    }
+
+    .spec-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 13.5px;
+      color: var(--text-muted);
+    }
+
+    .spec-list svg {
+      flex-shrink: 0;
+      margin-top: 3px;
+      color: var(--accent);
+    }
+
+    /* Card Mode Sparklines */
+    .card-widget {
+      width: 100%;
+      max-width: 360px;
+      border-radius: 14px;
+      background: var(--bg-card-solid);
+      border: 1px solid var(--border-strong);
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+      box-shadow: 0 18px 40px -16px rgba(0, 0, 0, 0.5);
+    }
+
+    .spark-row {
+      display: grid;
+      grid-template-columns: 74px 1fr 78px;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .spark-label {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .spark-svg {
+      width: 100%;
+      height: 28px;
+      display: block;
+    }
+
+    .spark-val {
+      text-align: right;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* Gaming Overlay Canvas */
+    .game-canvas {
+      background:
+        linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.65)),
+        repeating-linear-gradient(45deg, rgba(56, 189, 248, 0.05) 0 12px, transparent 12px 24px);
+    }
+
+    .clickthrough-badge {
+      position: absolute;
+      bottom: 14px;
+      left: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      font-size: 11px;
+      color: #cbd5e1;
+      font-family: "JetBrains Mono", monospace;
+    }
+
+    /* Real Screenshots Grid inside Tab 4 */
+    .shot-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      width: 100%;
+    }
+    .shot-card {
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .shot-card img {
+      width: 100%;
+      height: 230px;
+      object-fit: contain;
+      background: #0b0f17;
+      display: block;
+    }
+    .shot-caption {
+      padding: 9px 12px;
+      font-size: 12px;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* ==========================================================================
+       6. SECTION HEADINGS & PERFORMANCE STRIP
+       ========================================================================== */
+    section { padding: 72px 0; }
+
+    .section-head {
+      max-width: 680px;
+      margin-bottom: 36px;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11.5px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+
+    .section-head h2 {
+      margin: 0 0 10px;
+      font-size: clamp(1.65rem, 3vw, 2.35rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+    }
+
+    .section-head p {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+
+    .bench-card {
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      padding: 28px;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 32px;
+      align-items: center;
+    }
+
+    .bench-group { display: grid; gap: 18px; }
+
+    .bench-item-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 7px;
+      font-size: 13px;
+    }
+
+    .bench-name { font-weight: 600; }
+    .bench-name span { color: var(--text-faint); font-weight: 400; margin-left: 6px; font-size: 12px; }
+    .bench-val { font-family: "JetBrains Mono", monospace; font-size: 12.5px; color: var(--text-muted); }
+    .bench-item.highlight .bench-val { color: var(--accent); font-weight: 600; }
+
+    .bar-track {
+      height: 10px;
+      border-radius: 999px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: var(--text-faint);
+      opacity: 0.45;
+      transition: width 600ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .bench-item.highlight .bar-fill {
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      opacity: 1;
+      box-shadow: 0 0 14px var(--accent-glow);
+    }
+
+    .metric-tiles {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .metric-tile {
+      padding: 18px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+    }
+
+    .metric-tile .num {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .metric-tile .lbl {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* ==========================================================================
+       7. ASYMMETRIC 6-CARD BENTO GRID
+       ========================================================================== */
+    .bento-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 16px;
+    }
+
+    .bento-card {
+      position: relative;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 18px;
+      transition: border-color 160ms ease, transform 160ms ease;
+      overflow: hidden;
+    }
+
+    .bento-card:hover {
+      border-color: var(--border-strong);
+      transform: translateY(-2px);
+    }
+
+    .span-4 { grid-column: span 4; }
+    .span-3 { grid-column: span 3; }
+    .span-2 { grid-column: span 2; }
+
+    .bento-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: var(--accent-soft);
+      border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+      color: var(--accent);
+      display: grid;
+      place-items: center;
+      margin-bottom: 14px;
+    }
+
+    .bento-card h3 {
+      margin: 0 0 8px;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .bento-card p {
+      margin: 0;
+      font-size: 13.5px;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    .mini-preview {
+      border-radius: 11px;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      padding: 12px 14px;
+      font-size: 12px;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 9px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg-subtle);
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .tag-pill.accent {
+      border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .batt-list { display: grid; gap: 8px; }
+    .batt-row {
+      display: grid;
+      grid-template-columns: 1fr 70px 34px;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+    }
+    .batt-bar {
+      height: 6px;
+      border-radius: 999px;
+      background: var(--bg-subtle);
+      overflow: hidden;
+    }
+    .batt-fill { height: 100%; border-radius: 999px; background: var(--good); }
+    .batt-fill.warn { background: var(--warn); }
+
+    /* ==========================================================================
+       8. SENSOR MATRIX TABLE
+       ========================================================================== */
+    .matrix-wrap {
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      overflow-x: auto;
+    }
+
+    table.sensor-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+      min-width: 620px;
+    }
+
+    .sensor-table th, .sensor-table td {
+      text-align: left;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sensor-table th {
+      font-size: 11.5px;
+      font-family: "JetBrains Mono", monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-faint);
+      background: var(--bg-subtle);
+    }
+
+    .sensor-table tr:last-child td { border-bottom: none; }
+    .sensor-table td:first-child { font-weight: 600; color: var(--text); width: 170px; }
+    .sensor-table td { color: var(--text-muted); }
+    .sensor-table code {
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 5px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    /* ==========================================================================
+       9. INSTALLATION TERMINAL BLOCK
+       ========================================================================== */
+    .install-shell {
+      border-radius: 16px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-card);
+      overflow: hidden;
+    }
+
+    .install-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-subtle);
+    }
+
+    .tab-group { display: flex; flex-wrap: wrap; gap: 6px; }
+
+    .install-tab {
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 7px 13px;
+      border-radius: 8px;
+      transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+    }
+
+    .install-tab:hover { color: var(--text); }
+    .install-tab.active {
+      background: var(--accent-soft);
+      border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+      color: var(--accent);
+    }
+
+    .install-body { padding: 24px; }
+    .install-panel { display: none; }
+    .install-panel.active { display: block; animation: fadeUp 160ms ease-out; }
+
+    .distro-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .distro-btn {
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 5px 11px;
+      border-radius: 7px;
+    }
+    .distro-btn.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .code-box {
+      position: relative;
+      border-radius: 11px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: var(--term-bg);
+      color: #e2e8f0;
+      padding: 16px 18px;
+      font-size: 13px;
+      line-height: 1.7;
+      overflow-x: auto;
+      margin: 0 0 14px;
+    }
+
+    .code-box pre { margin: 0; padding-right: 78px; }
+    .code-box .copy-btn { position: absolute; top: 12px; right: 12px; }
+    .code-comment { color: #64748b; }
+
+    .win-downloads {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .dl-card {
+      padding: 18px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .dl-card h4 { margin: 0 0 4px; font-size: 15px; }
+    .dl-card p { margin: 0; font-size: 13px; color: var(--text-muted); }
+
+    .install-note {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    /* ==========================================================================
+       10. FOOTER
+       ========================================================================== */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 36px 0 48px;
+      color: var(--text-muted);
+      font-size: 13.5px;
+    }
+
+    .footer-inner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .footer-left {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .license-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 9px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg-subtle);
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11.5px;
+      color: var(--text);
+    }
+
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .footer-links a:hover { color: var(--text); }
+
+    /* ==========================================================================
+       10.5. HERO DOWNLOAD ROW & SCROLL REVEAL
+       ========================================================================== */
+    .hero-download-row {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 14px;
+    }
+
+    .btn-lg {
+      height: 46px;
+      padding: 0 24px;
+      font-size: 14.5px;
+      border-radius: 10px;
+    }
+
+    .js-reveal .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition:
+        opacity 560ms cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms),
+        transform 560ms cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms);
+      will-change: opacity, transform;
+    }
+
+    .js-reveal .reveal.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .js-reveal .bench-card:not(.is-visible) .bar-fill {
+      width: 0% !important;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .js-reveal .reveal {
+        opacity: 1;
+        transform: none;
+        transition: none;
+      }
+      .js-reveal .bench-card:not(.is-visible) .bar-fill {
+        width: auto !important;
+      }
+    }
+
+    /* ==========================================================================
+       11. RESPONSIVE
+       ========================================================================== */
+    @media (max-width: 920px) {
+      .nav-links { display: none; }
+      .showcase-pane.active { grid-template-columns: 1fr; }
+      .bench-card { grid-template-columns: 1fr; }
+      .span-4, .span-3, .span-2 { grid-column: span 6; }
+      .win-downloads, .shot-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 560px) {
+      .hero { padding: 48px 0 32px; }
+      .showcase-stage { padding: 18px; }
+      .metric-tiles { grid-template-columns: 1fr; }
+      .copy-snippet code { max-width: 190px; }
+    }
+  </style>
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="bg-grid" aria-hidden="true"></div>
 
-  <!-- Ambient Atmospheric Backdrop -->
-  <div class="ambient-canvas" aria-hidden="true">
-    <div class="glow glow-slate"></div>
-    <div class="glow glow-amber"></div>
-    <div class="grid-veil"></div>
-  </div>
-
-  <!-- Sticky Navigation -->
-  <header class="site-header" id="top">
+  <!-- ========================================================================
+       NAVBAR
+       ======================================================================== -->
+  <header class="navbar">
     <div class="container nav-inner">
-      <a href="#top" class="brand" aria-label="Prism Monitor home">
-        <span class="brand-icon" aria-hidden="true">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <rect x="3" y="12" width="3" height="8" rx="1" fill="#8cd0fb"/>
-            <rect x="8" y="7" width="3" height="13" rx="1" fill="#8cd0fb"/>
-            <rect x="13" y="4" width="3" height="16" rx="1" fill="#e6f2fa"/>
-            <rect x="18" y="9" width="3" height="11" rx="1" fill="#f2c15a"/>
+      <a href="#" class="brand" aria-label="Prism Monitor Home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <rect x="1.5" y="9" width="2.4" height="5.5" rx="1" fill="var(--accent)" opacity="0.55" />
+            <rect x="5.2" y="6" width="2.4" height="8.5" rx="1" fill="var(--accent)" opacity="0.78" />
+            <rect x="8.9" y="3" width="2.4" height="11.5" rx="1" fill="var(--accent)" />
+            <rect x="12.6" y="7.2" width="2.4" height="7.3" rx="1" fill="var(--accent-2)" />
           </svg>
         </span>
-        <span class="brand-name">PRISM MONITOR</span>
+        <span>Prism Monitor</span>
       </a>
 
-      <nav class="nav-links" aria-label="Primary navigation">
+      <nav class="nav-links" aria-label="Primary">
         <a href="#features">Features</a>
-        <a href="#screenshots">Screenshots</a>
+        <a href="#performance">Footprint</a>
         <a href="#sensors">Sensors</a>
         <a href="#install">Install</a>
-        <a href="#privacy">Privacy</a>
       </nav>
 
       <div class="nav-actions">
-        <a class="btn btn-ghost btn-sm" href="https://github.com/danny19862025/prism-monitor" target="_blank" rel="noopener noreferrer">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.27-.01-1.18-.02-2.14-3.2.69-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.76 2.69 1.25 3.35.96.1-.74.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.18-3.08-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.17 1.18.92-.26 1.91-.38 2.89-.39.98.01 1.97.13 2.89.39 2.2-1.49 3.16-1.18 3.16-1.18.63 1.58.24 2.75.12 3.04.74.8 1.18 1.82 1.18 3.08 0 4.41-2.69 5.39-5.26 5.67.42.36.79 1.06.79 2.14 0 1.55-.01 2.8-.01 3.18 0 .31.21.68.8.56C20.22 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/>
-          </svg>
-          <span>GitHub</span>
+        <a class="star-badge" href="https://github.com/danny19862025/prism-monitor" target="_blank" rel="noreferrer">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span>Star</span>
+          <span class="star-count" id="gh-stars">3</span>
         </a>
-        <a class="btn btn-primary btn-sm" href="#install">Download</a>
-      </div>
-
-      <button type="button" class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="mobile-menu">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-    </div>
-
-    <div class="mobile-menu" id="mobile-menu" hidden>
-      <a href="#features">Features</a>
-      <a href="#screenshots">Screenshots</a>
-      <a href="#sensors">Sensors</a>
-      <a href="#install">Install</a>
-      <a href="#privacy">Privacy</a>
-      <div class="mobile-menu-actions">
-        <a class="btn btn-ghost" href="https://github.com/danny19862025/prism-monitor" target="_blank" rel="noopener noreferrer">View on GitHub</a>
-        <a class="btn btn-primary" href="#install">Download v1.1.0</a>
+        <a class="btn btn-primary btn-sm" href="#install">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download
+        </a>
       </div>
     </div>
   </header>
 
-  <main id="main">
-    <!-- Hero Section -->
-    <section class="hero section">
-      <div class="container hero-grid">
-        <div class="hero-copy">
-          <div class="release-pill">
-            <span class="pulse-dot" aria-hidden="true"></span>
-            <span id="hero-release-badge">v1.1.0 &middot; Windows 10/11 &amp; Linux &middot; GPL-3.0</span>
-          </div>
+  <main>
+    <!-- ======================================================================
+         HERO SECTION
+         ====================================================================== -->
+    <section class="hero">
+      <div class="container">
+        <a href="https://github.com/danny19862025/prism-monitor/releases/tag/v1.1.0" target="_blank" rel="noreferrer" class="release-pill">
+          <span class="release-dot"></span>
+          <span class="mono">v1.1.0</span>
+          <span>Windows 10/11 &amp; Linux • GPL-3.0</span>
+        </a>
 
-          <h1 class="hero-title">
-            Quiet telemetry for <span class="text-accent">desktop</span> and <span class="text-warm">game.</span>
-          </h1>
+        <h1>
+          Quiet hardware telemetry.<br />
+          <span class="gradient-text">Zero bloat, always in sight.</span>
+        </h1>
 
-          <p class="hero-subtitle">
-            An always-on-top widget that shows live <strong>game FPS</strong>, <strong>CPU &amp; GPU temperature and load</strong>, <strong>memory</strong>, <strong>fan speeds</strong>, and <strong>controller, keyboard &amp; headset batteries</strong>. It sits quietly on your wallpaper or over your game &mdash; reading sensors only, never changing fan speeds or clocks.
-          </p>
+        <p class="hero-sub">
+          An open-source desktop widget for Windows and Linux that surfaces live game FPS, CPU &amp; GPU thermals, motherboard fans, and controller or Bluetooth batteries—strictly read-only, with zero tracking.
+        </p>
 
-          <div class="hero-ctas">
-            <a class="btn btn-primary btn-lg" id="hero-win-download" href="https://github.com/danny19862025/prism-monitor/releases/download/v1.1.0/PrismMonitor-Setup-1.1.0.exe">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M3 5.5L10.5 4.4V11.5H3V5.5ZM11.5 4.25L21 2.9V11.5H11.5V4.25ZM3 12.5H10.5V19.6L3 18.5V12.5ZM11.5 12.5H21V21.1L11.5 19.75V12.5Z"/>
-              </svg>
-              <span>Download for Windows</span>
-            </a>
-            <a class="btn btn-secondary btn-lg" href="#install" data-jump-tab="linux">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <polyline points="4 17 10 11 4 5"/>
-                <line x1="12" y1="19" x2="20" y2="19"/>
-              </svg>
-              <span>Install on Linux</span>
-            </a>
-            <a class="btn btn-ghost btn-lg" href="https://github.com/danny19862025/prism-monitor" target="_blank" rel="noopener noreferrer">
-              <span>View on GitHub</span>
-            </a>
-          </div>
-
-          <ul class="trust-bar" aria-label="Core guarantees">
-            <li>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
-              Zero telemetry
-            </li>
-            <li>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
-              Read-only sensors
-            </li>
-            <li>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
-              Free &amp; open source (GPL-3.0)
-            </li>
-          </ul>
+        <div class="hero-download-row">
+          <a class="btn btn-primary btn-lg" href="#install">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download Prism Monitor v1.1.0
+          </a>
         </div>
 
-        <!-- Interactive Live Widget Preview -->
-        <div class="hero-preview">
-          <div class="simulator-frame" aria-label="Interactive Prism Monitor widget preview">
-            <div class="simulator-toolbar">
-              <div class="sim-controls-group" role="group" aria-label="Widget mode">
-                <button type="button" class="sim-btn is-active" data-sim-mode="monitor">Monitor (CPU °C)</button>
-                <button type="button" class="sim-btn" data-sim-mode="gaming">Gaming (FPS)</button>
+        <div class="hero-cta-row">
+          <a class="btn btn-secondary" href="https://github.com/danny19862025/prism-monitor" target="_blank" rel="noreferrer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.57.1.78-.25.78-.55v-2.16c-3.2.7-3.87-1.36-3.87-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.68 0-1.25.45-2.28 1.18-3.08-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.16-1.18 3.16-1.18.63 1.58.24 2.75.12 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.39-5.26 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.66.79.55A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>
+            Star &amp; View on GitHub
+          </a>
+
+          <div class="copy-snippet" title="Linux one-line clone and install">
+            <span class="prompt-char mono">$</span>
+            <code id="hero-cmd">git clone https://github.com/danny19862025/prism-monitor.git &amp;&amp; cd prism-monitor &amp;&amp; ./Install-Linux.sh</code>
+            <button class="copy-btn" type="button" data-copy-target="hero-cmd">Copy</button>
+          </div>
+        </div>
+
+        <!-- Interactive Theme Switcher Preview -->
+        <div class="hero-theme-wrap">
+          <div class="theme-bar" role="group" aria-label="Theme preview switcher">
+            <button class="theme-chip active" type="button" data-set-theme="midnight"><span class="swatch" style="background:#38bdf8"></span>Midnight</button>
+            <button class="theme-chip" type="button" data-set-theme="graphite"><span class="swatch" style="background:#9ca3af"></span>Graphite</button>
+            <button class="theme-chip" type="button" data-set-theme="nord"><span class="swatch" style="background:#88c0d0"></span>Nord</button>
+            <button class="theme-chip" type="button" data-set-theme="dracula"><span class="swatch" style="background:#bd93f9"></span>Dracula</button>
+            <button class="theme-chip" type="button" data-set-theme="rose-pine"><span class="swatch" style="background:#ebbcba"></span>Rosé Pine</button>
+            <button class="theme-chip" type="button" data-set-theme="light"><span class="swatch" style="background:#f6f8fb; border-color:#94a3b8"></span>Light</button>
+          </div>
+        </div>
+
+        <!-- Interactive Hero Showcase -->
+        <div class="showcase-shell">
+          <div class="showcase-header">
+            <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+
+            <div class="showcase-tabs" role="tablist" aria-label="Showcase views">
+              <button class="showcase-tab active" role="tab" aria-selected="true" data-tab="poster">Poster Look</button>
+              <button class="showcase-tab" role="tab" aria-selected="false" data-tab="gaming">Gaming FPS</button>
+              <button class="showcase-tab" role="tab" aria-selected="false" data-tab="card">Card + Graphs</button>
+              <button class="showcase-tab" role="tab" aria-selected="false" data-tab="screenshots">Real Screenshots</button>
+            </div>
+
+            <div class="showcase-meta mono">
+              <span class="live-dot"></span>
+              <span>Live telemetry preview</span>
+            </div>
+          </div>
+
+          <div class="showcase-stage">
+            <!-- TAB 1: POSTER LOOK -->
+            <div class="showcase-pane active" data-pane="poster">
+              <div class="desktop-canvas">
+                <div class="poster-widget">
+                  <div class="poster-big-num" id="sim-big-temp">54</div>
+                  <div class="poster-kicker">CPU Package</div>
+                  <div class="poster-hero-readout">
+                    <span class="poster-hero-val" id="sim-cpu-temp">54°</span>
+                    <span class="poster-hero-unit" id="sim-cpu-meta">24% • 4.8 GHz • 62W</span>
+                  </div>
+                  <div class="poster-rows">
+                    <div class="poster-row">
+                      <span class="poster-row-label">GPU</span>
+                      <span class="poster-row-val" id="sim-gpu">48°C • 18% • 4.2 / 16 GB</span>
+                    </div>
+                    <div class="poster-row">
+                      <span class="poster-row-label">Memory</span>
+                      <span class="poster-row-val" id="sim-ram">14.6 / 32 GB • Swap 0.4 GB</span>
+                    </div>
+                    <div class="poster-row">
+                      <span class="poster-row-label">Fans</span>
+                      <span class="poster-row-val" id="sim-fans">CPU 1120 • Case 860 RPM</span>
+                    </div>
+                    <div class="poster-row">
+                      <span class="poster-row-label">Batteries</span>
+                      <span class="poster-row-val">DualSense 85% • Keychron 62%</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div class="sim-controls-group" role="group" aria-label="Widget look">
-                <button type="button" class="sim-btn is-active" data-sim-look="poster">Poster</button>
-                <button type="button" class="sim-btn" data-sim-look="card">Card</button>
-              </div>
-              <div class="sim-controls-group" role="group" aria-label="Poster backdrop panel" id="panel-control-group">
-                <button type="button" class="sim-btn is-active" data-sim-panel="off">Panel Off</button>
-                <button type="button" class="sim-btn" data-sim-panel="45">45% Panel</button>
-              </div>
-              <div class="sim-swatches" role="group" aria-label="Accent colour">
-                <button type="button" class="swatch is-active" data-accent="ice" style="--dot:#8cd0fb" title="Ice Blue (#8cd0fb)" aria-label="Ice blue accent"></button>
-                <button type="button" class="swatch" data-accent="amber" style="--dot:#f2c15a" title="Warm Amber (#f2c15a)" aria-label="Warm amber accent"></button>
-                <button type="button" class="swatch" data-accent="mint" style="--dot:#7ee0b4" title="Mint (#7ee0b4)" aria-label="Mint accent"></button>
-                <button type="button" class="swatch" data-accent="mono" style="--dot:#e2e8f0" title="Monochrome (#e2e8f0)" aria-label="Monochrome accent"></button>
+
+              <div class="showcase-copy">
+                <span class="eyebrow">Signature Poster Look</span>
+                <h3>Ambient typography that blends into your desktop.</h3>
+                <p>No clunky chrome or opaque boxes unless you want them. Bold Barlow lettering puts your CPU or GPU temperature front and center—or tucks cleanly behind your windows like a minimalist desktop clock.</p>
+                <ul class="spec-list">
+                  <li>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Custom size, font, text color, accent number color, and background panel opacity.</span>
+                  </li>
+                  <li>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Three Z-order modes: <strong>On top</strong>, <strong>Normal</strong>, or <strong>Behind windows</strong>.</span>
+                  </li>
+                  <li>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Native desktop widgets included for <strong>KDE Plasma 6</strong> and <strong>GNOME 45–49</strong>.</span>
+                  </li>
+                </ul>
               </div>
             </div>
 
-            <div class="wallpaper-stage" id="wallpaper-stage" data-mode="monitor" data-look="poster" data-panel="off" data-accent="ice">
-              <!-- Live Widget -->
-              <div class="prism-widget" id="live-widget">
-                <!-- Poster Look Content -->
-                <div class="widget-poster-view" id="poster-view">
-                  <div class="poster-rail" id="sim-vertical-caption">MONITOR</div>
-
-                  <div class="poster-body">
-                    <div class="poster-hero-row">
-                      <div class="poster-hero-meta">
-                        <div class="poster-label" id="sim-hero-label">CPU</div>
-                        <div class="poster-subline" id="sim-hero-subline">35% LOAD</div>
-                        <div class="poster-rule"></div>
-                      </div>
-                      <div class="poster-big-wrap">
-                        <span class="poster-big-num" id="sim-big-num">63</span>
-                        <span class="poster-big-unit" id="sim-big-unit">&deg;C</span>
-                      </div>
+            <!-- TAB 2: GAMING FPS -->
+            <div class="showcase-pane" data-pane="gaming">
+              <div class="desktop-canvas game-canvas">
+                <div class="poster-widget">
+                  <div class="poster-big-num" id="sim-big-fps">144</div>
+                  <div class="poster-kicker">Game FPS • Vulkan / Proton</div>
+                  <div class="poster-hero-readout">
+                    <span class="poster-hero-val" id="sim-fps-val">144</span>
+                    <span class="poster-hero-unit">FPS • 6.9 ms</span>
+                  </div>
+                  <div class="poster-rows">
+                    <div class="poster-row">
+                      <span class="poster-row-label">GPU</span>
+                      <span class="poster-row-val" id="sim-game-gpu">69°C • 96% • 235W</span>
                     </div>
-
-                    <div class="poster-section">
-                      <div class="poster-section-head">SYSTEM</div>
-                      <div class="poster-row" id="sim-cpu-row" hidden>
-                        <span class="row-k">CPU</span>
-                        <span class="row-v" id="sim-cpu-val">35% &middot; 63&deg;C</span>
-                      </div>
-                      <div class="poster-row">
-                        <span class="row-k">GPU</span>
-                        <span class="row-v is-warm" id="sim-gpu-val">92% &middot; 70&deg;C</span>
-                      </div>
-                      <div class="poster-row">
-                        <span class="row-k">MEMORY</span>
-                        <span class="row-v" id="sim-mem-val">9.4 / 32 GB</span>
-                      </div>
+                    <div class="poster-row">
+                      <span class="poster-row-label">CPU</span>
+                      <span class="poster-row-val" id="sim-game-cpu">64°C • 47% • 88W</span>
                     </div>
-
-                    <div class="poster-section">
-                      <div class="poster-section-head">FANS</div>
-                      <div class="poster-row">
-                        <span class="row-k">CPU FAN</span>
-                        <span class="row-v" id="sim-fan1-val">1411 RPM</span>
-                      </div>
-                      <div class="poster-row">
-                        <span class="row-k">CASE FAN 1</span>
-                        <span class="row-v" id="sim-fan2-val">980 RPM</span>
-                      </div>
+                    <div class="poster-row">
+                      <span class="poster-row-label">VRAM</span>
+                      <span class="poster-row-val">11.4 / 16.0 GB</span>
                     </div>
-
-                    <div class="poster-section">
-                      <div class="poster-section-head">BATTERIES</div>
-                      <div class="poster-row">
-                        <span class="row-k">MX MASTER 3S</span>
-                        <span class="row-v-bat">
-                          <span class="bat-text is-low">12%</span>
-                          <span class="bat-track"><span class="bat-fill is-low" style="width:12%"></span></span>
-                        </span>
-                      </div>
-                      <div class="poster-row">
-                        <span class="row-k">WH-1000XM5</span>
-                        <span class="row-v-bat">
-                          <span class="bat-text">80%</span>
-                          <span class="bat-track"><span class="bat-fill" style="width:80%"></span></span>
-                        </span>
-                      </div>
-                      <div class="poster-row">
-                        <span class="row-k">XBOX WIRELESS CONTR&hellip;</span>
-                        <span class="row-v-bat">
-                          <span class="bat-text is-mid">35%</span>
-                          <span class="bat-track"><span class="bat-fill is-mid" style="width:35%"></span></span>
-                        </span>
-                      </div>
+                    <div class="poster-row">
+                      <span class="poster-row-label">Controller</span>
+                      <span class="poster-row-val">DualSense 84%</span>
                     </div>
                   </div>
                 </div>
+                <span class="clickthrough-badge">Click-through enabled • PresentMon / Vulkan layer</span>
+              </div>
 
-                <!-- Card Look Content -->
-                <div class="widget-card-view" id="card-view" hidden>
-                  <div class="card-top-bar">
-                    <span class="card-title">PRISM MONITOR</span>
-                    <span class="card-pill" id="card-mode-pill">MONITOR &middot; 1.0s</span>
+              <div class="showcase-copy">
+                <span class="eyebrow">Automatic Gaming Switch</span>
+                <h3>FPS takes over the moment you launch a game.</h3>
+                <p>No Steam launch options, no RivaTuner setup. While you play, the big hero number automatically flips from temperature to live frame rate—and click-through lets every mouse click pass straight into your game.</p>
+                <ul class="spec-list">
+                  <li>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span><strong>Windows:</strong> Bundled Intel PresentMon covering DirectX, Vulkan, and OpenGL.</span>
+                  </li>
+                  <li>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span><strong>Linux:</strong> Lightweight native Vulkan layer—works automatically with Steam/Proton &amp; DXVK.</span>
+                  </li>
+                  <li>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Toggle click-through or individual sections right from the system tray.</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- TAB 3: CARD + GRAPHS -->
+            <div class="showcase-pane" data-pane="card">
+              <div class="desktop-canvas">
+                <div class="card-widget">
+                  <div class="spark-row">
+                    <span class="spark-label">CPU</span>
+                    <svg class="spark-svg" viewBox="0 0 160 28" preserveAspectRatio="none">
+                      <polyline fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="2,20 18,18 34,21 50,15 66,17 82,12 98,14 114,9 130,13 146,11 158,12" />
+                    </svg>
+                    <span class="spark-val" style="color:var(--accent)">54°C 24%</span>
                   </div>
-
-                  <div class="card-tile-grid">
-                    <div class="card-tile">
-                      <div class="tile-head">
-                        <span>CPU</span>
-                        <strong id="card-cpu-val">63&deg;C &middot; 35%</strong>
-                      </div>
-                      <svg class="sparkline" viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden="true">
-                        <polyline id="spark-cpu" fill="none" stroke="var(--widget-accent)" stroke-width="1.8" points="0,18 15,17 30,14 45,15 60,12 75,14 90,11 105,13 120,12"/>
-                      </svg>
-                    </div>
-
-                    <div class="card-tile">
-                      <div class="tile-head">
-                        <span>GPU</span>
-                        <strong class="is-warm" id="card-gpu-val">70&deg;C &middot; 92%</strong>
-                      </div>
-                      <svg class="sparkline" viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden="true">
-                        <polyline id="spark-gpu" fill="none" stroke="#f2c15a" stroke-width="1.8" points="0,10 15,9 30,11 45,8 60,7 75,9 90,6 105,8 120,7"/>
-                      </svg>
-                    </div>
-
-                    <div class="card-tile" id="card-third-tile">
-                      <div class="tile-head">
-                        <span id="card-third-label">MEMORY</span>
-                        <strong id="card-third-val">9.4 / 32 GB</strong>
-                      </div>
-                      <svg class="sparkline" viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden="true">
-                        <polyline id="spark-third" fill="none" stroke="#94a3b8" stroke-width="1.8" points="0,18 15,18 30,17 45,17 60,16 75,16 90,16 105,15 120,15"/>
-                      </svg>
-                    </div>
+                  <div class="spark-row">
+                    <span class="spark-label">GPU</span>
+                    <svg class="spark-svg" viewBox="0 0 160 28" preserveAspectRatio="none">
+                      <polyline fill="none" stroke="var(--accent-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="2,22 18,21 34,19 50,20 66,18 82,19 98,15 114,16 130,14 146,15 158,13" />
+                    </svg>
+                    <span class="spark-val" style="color:var(--accent-2)">48°C 18%</span>
                   </div>
-
-                  <div class="card-footer-rows">
-                    <div class="card-mini-row">
-                      <span>FANS</span>
-                      <span id="card-fans-val">CPU 1411 RPM &middot; CASE 980 RPM</span>
-                    </div>
-                    <div class="card-mini-row">
-                      <span>BATTERIES</span>
-                      <span>MX 12% &middot; XM5 80% &middot; XBOX 35%</span>
-                    </div>
+                  <div class="spark-row">
+                    <span class="spark-label">RAM</span>
+                    <svg class="spark-svg" viewBox="0 0 160 28" preserveAspectRatio="none">
+                      <polyline fill="none" stroke="var(--good)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="2,16 18,16 34,15 50,15 66,14 82,14 98,14 114,13 130,13 146,13 158,13" />
+                    </svg>
+                    <span class="spark-val" style="color:var(--good)">14.6 GB</span>
+                  </div>
+                  <div class="spark-row">
+                    <span class="spark-label">Fans</span>
+                    <svg class="spark-svg" viewBox="0 0 160 28" preserveAspectRatio="none">
+                      <polyline fill="none" stroke="var(--warn)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="2,18 18,18 34,17 50,18 66,17 82,16 98,16 114,17 130,16 146,16 158,16" />
+                    </svg>
+                    <span class="spark-val" style="color:var(--warn)">1120 RPM</span>
                   </div>
                 </div>
               </div>
 
-              <div class="stage-caption">
-                <span>Interactive simulation &middot; Live 1s poll cadence</span>
-                <span class="stage-hint">Try switching Mode or Look above</span>
+              <div class="showcase-copy">
+                <span class="eyebrow">Compact Card Look</span>
+                <h3>Clean history sparklines when you want trends at a glance.</h3>
+                <p>Prefer a classic dark panel? Switch to Card look with a right-click for crisp real-time history graphs across CPU, GPU, memory/swap, and fans—ideal for spotting thermal spikes during builds or renders.</p>
+                <ul class="spec-list">
+                  <li>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Double-click the widget anytime to open the redesigned sidebar Settings window.</span>
+                  </li>
+                  <li>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Show or hide FPS, CPU/GPU/RAM, swap/zram, fans, and batteries independently.</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- TAB 4: REAL SCREENSHOTS -->
+            <div class="showcase-pane" data-pane="screenshots">
+              <div class="shot-grid">
+                <div class="shot-card">
+                  <img src="poster.png" alt="Prism Monitor in Poster look showing CPU temperature, system metrics, fans, and batteries" loading="lazy" />
+                  <div class="shot-caption">
+                    <span>Poster Look (Desktop)</span>
+                    <span class="mono">docs/poster.png</span>
+                  </div>
+                </div>
+                <div class="shot-card">
+                  <img src="poster-gaming.png" alt="Prism Monitor while gaming showing FPS as the big number" loading="lazy" />
+                  <div class="shot-caption">
+                    <span>Poster Look (Gaming FPS)</span>
+                    <span class="mono">docs/poster-gaming.png</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="showcase-copy">
+                <span class="eyebrow">Direct from the Repo</span>
+                <h3>What you see is what runs on your desktop.</h3>
+                <p>Actual captures from Prism Monitor v1.1.0 running on desktop and in-game. Drag it anywhere, pin it to any layer, and forget it's even using resources.</p>
+                <a class="btn btn-secondary" href="https://github.com/danny19862025/prism-monitor/blob/main/docs/GUIDE.md" target="_blank" rel="noreferrer">
+                  Read the Full User Guide →
+                </a>
               </div>
             </div>
           </div>
@@ -300,148 +1620,245 @@
       </div>
     </section>
 
-    <!-- Real Screenshots Section -->
-    <section class="section" id="screenshots">
+    <!-- ======================================================================
+         PERFORMANCE / FOOTPRINT STRIP
+         ====================================================================== -->
+    <section id="performance">
       <div class="container">
-        <div class="section-head reveal">
-          <span class="eyebrow">REAL SCREENSHOTS</span>
-          <h2>One widget that adapts between desktop calm and gaming focus.</h2>
-          <p>Captured directly from Prism Monitor in the Poster look. Unavailable readings are omitted automatically so the layout stays crisp and clutter-free.</p>
+        <div class="section-head">
+          <span class="eyebrow">Lightweight by Design</span>
+          <h2>Monitors your hardware without becoming the bottleneck.</h2>
+          <p>Built on native Qt/PySide6, direct Linux kernel interfaces, and a minimal C Vulkan layer—no Chromium runtime, no background web servers, and no telemetry.</p>
         </div>
 
-        <div class="screenshots-grid">
-          <figure class="shot-card reveal">
-            <div class="shot-media">
-              <img src="assets/poster.png" alt="Prism Monitor in Poster look showing CPU temperature 63 degrees Celsius as the large number, GPU, memory, fans, and Bluetooth battery levels" loading="lazy" width="340" height="404">
+        <div class="bench-card">
+          <div class="bench-group">
+            <div class="bench-item highlight">
+              <div class="bench-item-head">
+                <span class="bench-name">Prism Monitor <span>(Qt + Kernel / PresentMon)</span></span>
+                <span class="bench-val">~42 MB RAM • &lt;0.5% CPU</span>
+              </div>
+              <div class="bar-track"><div class="bar-fill" style="width: 11%"></div></div>
             </div>
-            <figcaption class="shot-caption">
-              <h3>At rest on the desktop</h3>
-              <p>Shows CPU or GPU temperature as the anchor numeral alongside system usage, motherboard fans, and peripheral batteries.</p>
-            </figcaption>
-          </figure>
 
-          <figure class="shot-card reveal">
-            <div class="shot-media">
-              <img src="assets/poster-gaming.png" alt="Prism Monitor while gaming showing 142 FPS for Cyberpunk 2077 with 7.0 ms frame time, CPU, GPU, memory, fans, and batteries" loading="lazy" width="340" height="404">
+            <div class="bench-item">
+              <div class="bench-item-head">
+                <span class="bench-name">Electron System Dashboard <span>(Chromium + Node)</span></span>
+                <span class="bench-val">~340 MB RAM • 2–4% CPU</span>
+              </div>
+              <div class="bar-track"><div class="bar-fill" style="width: 68%"></div></div>
             </div>
-            <figcaption class="shot-caption">
-              <h3>Automatically switches to FPS while gaming</h3>
-              <p>When a game starts, the big number flips to live FPS and frame time, tucking CPU load and temperature cleanly into the System block.</p>
-            </figcaption>
-          </figure>
+
+            <div class="bench-item">
+              <div class="bench-item-head">
+                <span class="bench-name">OEM Gaming / RGB Suite <span>(Services + WebView)</span></span>
+                <span class="bench-val">~520 MB RAM • 3–7% CPU</span>
+              </div>
+              <div class="bar-track"><div class="bar-fill" style="width: 96%"></div></div>
+            </div>
+          </div>
+
+          <div class="metric-tiles">
+            <div class="metric-tile">
+              <div class="num">0</div>
+              <div class="lbl">Telemetry packets sent. 100% local unless you click Check for Updates.</div>
+            </div>
+            <div class="metric-tile">
+              <div class="num">Read-Only</div>
+              <div class="lbl">Never touches fan curves, voltages, or GPU/CPU clocks.</div>
+            </div>
+            <div class="metric-tile">
+              <div class="num">No sudo</div>
+              <div class="lbl">Linux reads hwmon, RAPL, amdgpu &amp; UPower with zero admin rights.</div>
+            </div>
+            <div class="metric-tile">
+              <div class="num">21 MB</div>
+              <div class="lbl">Self-contained Windows installer with portable ZIP option.</div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- Features Bento Grid -->
-    <section class="section" id="features">
+    <!-- ======================================================================
+         ASYMMETRIC 6-CARD BENTO GRID
+         ====================================================================== -->
+    <section id="features">
       <div class="container">
-        <div class="section-head reveal">
-          <span class="eyebrow">DESIGNED FOR DAILY DRIVING</span>
-          <h2>Everything you check, nothing you fiddle with.</h2>
-          <p>Built in Python &amp; PySide6 (Qt 6) for crisp high-DPI rendering, fractional scaling, and low idle overhead.</p>
+        <div class="section-head">
+          <span class="eyebrow">Core Capabilities</span>
+          <h2>Everything you check while coding, rendering, or gaming.</h2>
+          <p>Six focused building blocks designed to stay quiet until you glance up.</p>
         </div>
 
         <div class="bento-grid">
-          <article class="bento-card reveal">
-            <div class="bento-icon" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 15l3-4 3 3 4-5"/></svg>
+          <!-- Card 1 (Wide: 4 cols) -->
+          <article class="bento-card span-4">
+            <div>
+              <div class="bento-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              </div>
+              <h3>Zero-Config Game FPS Overlay</h3>
+              <p>Uses bundled Intel PresentMon on Windows (DirectX, Vulkan, OpenGL) and a tiny native Vulkan layer on Linux—automatically capturing Steam/Proton and DXVK games without touching launch options.</p>
             </div>
-            <h3>Poster &amp; Card Looks</h3>
-            <p>Start frameless in <strong>Poster</strong> with bold Barlow typography and a faded anchor numeral, or switch to <strong>Card</strong> for translucent tiles with live history sparklines. Customize size, panel opacity, fonts, and colours.</p>
+            <div class="mini-preview">
+              <div class="pill-row">
+                <span class="tag-pill accent">144 FPS</span>
+                <span class="tag-pill">DirectX 11/12</span>
+                <span class="tag-pill">Vulkan</span>
+                <span class="tag-pill">OpenGL</span>
+                <span class="tag-pill">Steam / Proton</span>
+                <span class="tag-pill">Click-through</span>
+              </div>
+            </div>
           </article>
 
-          <article class="bento-card reveal">
-            <div class="bento-icon is-warm" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <!-- Card 2 (Narrow: 2 cols) -->
+          <article class="bento-card span-2">
+            <div>
+              <div class="bento-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+              </div>
+              <h3>Poster &amp; Card Looks</h3>
+              <p>Switch instantly between frameless Barlow typography with a faded hero number, or a compact Card panel with live history graphs.</p>
             </div>
-            <h3>Game FPS Without Injection</h3>
-            <p>Measures real presentation frame rates via bundled <strong>Intel PresentMon</strong> on Windows (DirectX, Vulkan, OpenGL) and a lightweight <strong>Vulkan layer</strong> on Linux &mdash; including Steam/Proton games with zero launch flags.</p>
+            <div class="mini-preview">
+              <div class="pill-row">
+                <span class="tag-pill accent">Poster</span>
+                <span class="tag-pill">Card + Sparklines</span>
+                <span class="tag-pill">Custom Opacity</span>
+              </div>
+            </div>
           </article>
 
-          <article class="bento-card reveal">
-            <div class="bento-icon" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="18" height="10" rx="2"/><line x1="22" y1="11" x2="22" y2="13"/><line x1="6" y1="11" x2="6" y2="13"/><line x1="10" y1="11" x2="10" y2="13"/></svg>
+          <!-- Card 3 (Half: 3 cols) -->
+          <article class="bento-card span-3">
+            <div>
+              <div class="bento-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></svg>
+              </div>
+              <h3>Deep Hardware &amp; Fan Sensors</h3>
+              <p>Tracks CPU load, package temp, clocks &amp; RAPL power; GPU temp, hotspot, VRAM &amp; power; RAM, page file, Linux swap &amp; zram; and motherboard fan RPMs.</p>
             </div>
-            <h3>Controller &amp; Peripheral Batteries</h3>
-            <p>Check PlayStation and Xbox controllers, Bluetooth mice, keyboards, headsets, and laptop batteries at a glance &mdash; with colour-coded charge bars for low levels.</p>
+            <div class="mini-preview mono" style="display:flex; justify-content:space-between; color:var(--text-muted);">
+              <span>k10temp / coretemp</span>
+              <span style="color:var(--accent)">amdgpu • hwmon</span>
+            </div>
           </article>
 
-          <article class="bento-card reveal">
-            <div class="bento-icon" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="14" height="10" rx="2"/><rect x="7" y="10" width="14" height="10" rx="2"/></svg>
+          <!-- Card 4 (Half: 3 cols) -->
+          <article class="bento-card span-3">
+            <div>
+              <div class="bento-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="16" height="10" rx="2"/><line x1="22" y1="11" x2="22" y2="13"/><line x1="6" y1="11" x2="6" y2="13"/><line x1="10" y1="11" x2="10" y2="13"/></svg>
+              </div>
+              <h3>Controller &amp; Bluetooth Batteries</h3>
+              <p>Never get caught with a dead controller mid-boss fight. Monitors PlayStation, Xbox, Bluetooth keyboards, mice, headsets, Logitech gear, and laptop batteries.</p>
             </div>
-            <h3>Layering &amp; Click-Through</h3>
-            <p>Pin it <strong>On top of windows</strong> over games, keep it <strong>Normal</strong>, or sink it <strong>Behind windows</strong> like a desktop clock. Enable click-through so mouse clicks pass straight to your game.</p>
+            <div class="mini-preview batt-list">
+              <div class="batt-row">
+                <span>DualSense Wireless</span>
+                <div class="batt-bar"><div class="batt-fill" style="width:85%"></div></div>
+                <span class="mono" style="text-align:right">85%</span>
+              </div>
+              <div class="batt-row">
+                <span>BT Mechanical KB</span>
+                <div class="batt-bar"><div class="batt-fill warn" style="width:28%"></div></div>
+                <span class="mono" style="text-align:right">28%</span>
+              </div>
+            </div>
           </article>
 
-          <article class="bento-card reveal">
-            <div class="bento-icon" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+          <!-- Card 5 (Narrow: 2 cols) -->
+          <article class="bento-card span-2">
+            <div>
+              <div class="bento-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+              </div>
+              <h3>Desktop Layering &amp; Native Widgets</h3>
+              <p>Float over games, act as a normal window, or sit behind every window on your wallpaper—plus native KDE Plasma 6 &amp; GNOME 45–49 widgets.</p>
             </div>
-            <h3>Native Linux Desktop Widgets</h3>
-            <p>Beyond its standalone window, the Linux installer includes native widget integration for <strong>KDE Plasma 6</strong> and <strong>GNOME 45&ndash;49</strong> fed directly by the background tray process.</p>
+            <div class="mini-preview">
+              <div class="pill-row">
+                <span class="tag-pill accent">Plasma 6</span>
+                <span class="tag-pill">GNOME 45–49</span>
+                <span class="tag-pill">Wayland</span>
+              </div>
+            </div>
           </article>
 
-          <article class="bento-card reveal">
-            <div class="bento-icon is-warm" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+          <!-- Card 6 (Wide: 4 cols) -->
+          <article class="bento-card span-4">
+            <div>
+              <div class="bento-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+              </div>
+              <h3>Keep Awake, Themes &amp; Privacy</h3>
+              <p>Built-in <code>caffeinate</code>-style Keep Awake holds your PC awake for a set duration or until a download, render, or app finishes—then optionally sleeps or shuts down. Paired with Dark, Midnight, Light &amp; System themes.</p>
             </div>
-            <h3>Built-in Keep Awake</h3>
-            <p>Keep your PC awake for a set duration or until a download, render, or running app finishes &mdash; then optionally sleep or shut down automatically, like <code>caffeinate</code> on a Mac.</p>
+            <div class="mini-preview">
+              <div class="pill-row">
+                <span class="tag-pill accent">Keep Awake Timer</span>
+                <span class="tag-pill">Watch App / Download</span>
+                <span class="tag-pill">Auto-Sleep / Shutdown</span>
+                <span class="tag-pill">System Theme Sync</span>
+              </div>
+            </div>
           </article>
         </div>
       </div>
     </section>
 
-    <!-- What It Reads Matrix -->
-    <section class="section" id="sensors">
+    <!-- ======================================================================
+         SENSOR MATRIX
+         ====================================================================== -->
+    <section id="sensors">
       <div class="container">
-        <div class="section-head reveal">
-          <span class="eyebrow">WHAT IT READS</span>
-          <h2>Native sensor pipelines for Windows &amp; Linux.</h2>
-          <p>Hover any row inside the widget to inspect its exact sensor source. No bloated suites or background web views.</p>
+        <div class="section-head">
+          <span class="eyebrow">Under the Hood</span>
+          <h2>Native sensor pipelines on both platforms.</h2>
+          <p>Direct OS and kernel backends keep overhead negligible and readings accurate.</p>
         </div>
 
-        <div class="matrix-wrap reveal">
+        <div class="matrix-wrap">
           <table class="sensor-table">
             <thead>
               <tr>
-                <th scope="col">Metric</th>
-                <th scope="col">Windows 10 / 11</th>
-                <th scope="col">Linux</th>
+                <th>Metric</th>
+                <th>Windows 10 / 11</th>
+                <th>Linux (Wayland &amp; X11)</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <th scope="row">CPU</th>
-                <td>Load from Windows. Temperature, package power, and measured clocks via the optional sensor helper (LibreHardwareMonitor 0.9.6).</td>
-                <td><code>/proc</code>, <code>cpufreq</code>, kernel <code>hwmon</code> (<code>k10temp</code>, <code>coretemp</code>, <code>zenpower</code>), and RAPL package power.</td>
+                <td>CPU</td>
+                <td>Windows load + LibreHardwareMonitor sensor helper for temp, power &amp; measured clocks</td>
+                <td><code>/proc</code>, <code>cpufreq</code>, hwmon (<code>k10temp</code>, <code>coretemp</code>, <code>zenpower</code>), RAPL power</td>
               </tr>
               <tr>
-                <th scope="row">GPU</th>
-                <td>AMD driver (ADL): edge &amp; hotspot temperature, load, clock, board power, fan RPM, and VRAM.</td>
-                <td><code>amdgpu</code> sysfs files: temperature, power, clock, fan RPM, load, and VRAM.</td>
+                <td>GPU</td>
+                <td>AMD ADL driver: temperature, hotspot, load, clock, power, fan &amp; VRAM</td>
+                <td><code>amdgpu</code> sysfs: temperature, power, clock, fan, load &amp; VRAM</td>
               </tr>
               <tr>
-                <th scope="row">Memory &amp; Swap</th>
-                <td>Windows memory status and page file usage.</td>
-                <td><code>/proc/meminfo</code> including swap partitions, swap files, and <code>zram</code>.</td>
+                <td>Memory &amp; Swap</td>
+                <td>Windows memory status &amp; page file</td>
+                <td><code>/proc/meminfo</code> (swap partitions, swap files &amp; <code>zram</code>)</td>
               </tr>
               <tr>
-                <th scope="row">Motherboard Fans</th>
-                <td>Super I/O motherboard fan headers through the elevated sensor helper.</td>
-                <td>Kernel <code>hwmon</code> fan inputs (with Super I/O driver such as <code>nct6775</code> or <code>it87</code>).</td>
+                <td>Fans</td>
+                <td>Motherboard fan headers via sensor helper</td>
+                <td>Kernel hwmon fan inputs (e.g. <code>nct6775</code>, <code>it87</code>)</td>
               </tr>
               <tr>
-                <th scope="row">Game FPS</th>
-                <td>Bundled <strong>Intel PresentMon 2.6.0</strong>: DirectX, Vulkan, and OpenGL titles without DLL injection.</td>
-                <td>Custom lightweight <strong>Vulkan layer</strong>: native Vulkan games and Windows games via Steam/Proton &amp; DXVK.</td>
+                <td>Game FPS</td>
+                <td>Bundled Intel PresentMon (DirectX, Vulkan, OpenGL)</td>
+                <td>Lightweight native Vulkan layer (including Steam/Proton &amp; DXVK)</td>
               </tr>
               <tr>
-                <th scope="row">Batteries</th>
-                <td>PlayStation &amp; Xbox controllers, Bluetooth keyboards, mice &amp; headsets, plus laptop battery.</td>
-                <td><strong>UPower</strong> (game controllers, BlueZ devices, Logitech peripherals, and laptop battery).</td>
+                <td>Batteries</td>
+                <td>PlayStation &amp; Xbox controllers, Bluetooth peripherals, laptop battery</td>
+                <td><code>UPower</code> (controllers, BlueZ devices, Logitech, laptop battery)</td>
               </tr>
             </tbody>
           </table>
@@ -449,231 +1866,292 @@
       </div>
     </section>
 
-    <!-- Download & Install Section -->
-    <section class="section" id="install">
+    <!-- ======================================================================
+         INSTALLATION BLOCK
+         ====================================================================== -->
+    <section id="install">
       <div class="container">
-        <div class="section-head reveal">
-          <span class="eyebrow">GET PRISM MONITOR</span>
-          <h2>Download &amp; install in under a minute.</h2>
-          <p>Latest release: <strong id="install-version-label">v1.1.0</strong> &middot; Licensed under GPL-3.0.</p>
+        <div class="section-head">
+          <span class="eyebrow">Get Started in Seconds</span>
+          <h2>Install on Windows or Linux.</h2>
+          <p>Download the ready-to-run Windows installer or clone and run the automated Linux installer.</p>
         </div>
 
-        <div class="install-shell reveal">
-          <div class="os-tabs" role="tablist" aria-label="Installation platform">
-            <button type="button" class="os-tab is-active" role="tab" aria-selected="true" aria-controls="panel-windows" id="tab-windows" data-tab="windows">Windows 10 / 11</button>
-            <button type="button" class="os-tab" role="tab" aria-selected="false" aria-controls="panel-linux" id="tab-linux" data-tab="linux">Linux</button>
-            <button type="button" class="os-tab" role="tab" aria-selected="false" aria-controls="panel-source" id="tab-source" data-tab="source">Build from Source</button>
-          </div>
-
-          <!-- Windows Panel -->
-          <div class="os-panel is-active" id="panel-windows" role="tabpanel" aria-labelledby="tab-windows">
-            <div class="download-cards">
-              <div class="dl-card is-recommended">
-                <div class="dl-card-head">
-                  <span class="dl-badge">Recommended</span>
-                  <span class="dl-size" id="exe-size">22.1 MB</span>
-                </div>
-                <h3>Windows Installer</h3>
-                <p class="dl-filename">PrismMonitor-Setup-1.1.0.exe</p>
-                <p class="dl-desc">Installs for your account with no admin prompt. Includes Start Menu shortcut, optional CPU sensor helper setup, and keeps settings on upgrade.</p>
-                <a class="btn btn-primary btn-block" id="win-installer-link" href="https://github.com/danny19862025/prism-monitor/releases/download/v1.1.0/PrismMonitor-Setup-1.1.0.exe">
-                  Download Installer (.exe)
-                </a>
-                <div class="sha-box">
-                  <div class="sha-label">
-                    <span>SHA-256</span>
-                    <button type="button" class="copy-btn" data-copy="ec979fe888812175b2700983867ae80680af4489bdca8114c715759bad8b5d34">Copy</button>
-                  </div>
-                  <code id="exe-sha">ec979fe888812175b2700983867ae80680af4489bdca8114c715759bad8b5d34</code>
-                </div>
-              </div>
-
-              <div class="dl-card">
-                <div class="dl-card-head">
-                  <span class="dl-badge is-neutral">Portable</span>
-                  <span class="dl-size" id="zip-size">28.6 MB</span>
-                </div>
-                <h3>Portable Archive</h3>
-                <p class="dl-filename">PrismMonitor-windows.zip</p>
-                <p class="dl-desc">Prefer no installer? Extract the folder anywhere, keep its files together, and launch <code>PrismMonitor\PrismMonitor.exe</code> directly.</p>
-                <a class="btn btn-secondary btn-block" id="win-zip-link" href="https://github.com/danny19862025/prism-monitor/releases/download/v1.1.0/PrismMonitor-windows.zip">
-                  Download Portable (.zip)
-                </a>
-                <div class="sha-box">
-                  <div class="sha-label">
-                    <span>SHA-256</span>
-                    <button type="button" class="copy-btn" data-copy="5aa896954a74e361d9a921d92d8881825733d8c315820c0bf1dfab92bbec9a93">Copy</button>
-                  </div>
-                  <code id="zip-sha">5aa896954a74e361d9a921d92d8881825733d8c315820c0bf1dfab92bbec9a93</code>
-                </div>
-              </div>
+        <div class="install-shell">
+          <div class="install-tabs">
+            <div class="tab-group" role="tablist" aria-label="Installation methods">
+              <button class="install-tab active" role="tab" aria-selected="true" data-install="linux">Linux</button>
+              <button class="install-tab" role="tab" aria-selected="false" data-install="windows">Windows 10/11</button>
+              <button class="install-tab" role="tab" aria-selected="false" data-install="source">Build from Source</button>
             </div>
-
-            <ol class="setup-steps">
-              <li>
-                <strong>Run the installer:</strong> Installs for your Windows user without an admin prompt (or pick <em>all users</em> in the first dialog).
-              </li>
-              <li>
-                <strong>Verify SmartScreen if shown:</strong> Because the installer is not code-signed, Windows SmartScreen may warn. Verify the SHA-256 checksum above, then click <em>More info &rarr; Run anyway</em>.
-              </li>
-              <li>
-                <strong>Launch Prism Monitor:</strong> Appears at the top-right of your main screen with a four-bar icon in the system tray.
-              </li>
-              <li>
-                <strong>Enable CPU temps &amp; motherboard fans (optional):</strong> Keep <em>Set up CPU sensors</em> ticked in the installer or click the first-run tray notification. Windows asks for elevation once; afterwards it starts automatically with no prompt.
-              </li>
-            </ol>
+            <a class="btn btn-secondary btn-sm" href="https://github.com/danny19862025/prism-monitor/releases/latest" target="_blank" rel="noreferrer">
+              All GitHub Releases (v1.1.0) →
+            </a>
           </div>
 
-          <!-- Linux Panel -->
-          <div class="os-panel" id="panel-linux" role="tabpanel" aria-labelledby="tab-linux" hidden>
-            <p class="linux-intro">
-              Tested on Arch Linux with KDE Plasma 6 (Wayland). <strong>No administrator rights are needed</strong> at runtime &mdash; all sensors come directly from kernel interfaces.
-            </p>
-
-            <div class="step-block">
-              <div class="step-header">
-                <h3>1. Install dependencies for your distribution</h3>
-                <div class="distro-pills" role="group" aria-label="Linux distribution">
-                  <button type="button" class="distro-pill is-active" data-distro="arch">Arch / Manjaro / CachyOS</button>
-                  <button type="button" class="distro-pill" data-distro="debian">Debian / Ubuntu / Mint</button>
-                  <button type="button" class="distro-pill" data-distro="fedora">Fedora / Nobara</button>
-                  <button type="button" class="distro-pill" data-distro="opensuse">openSUSE</button>
-                </div>
+          <div class="install-body">
+            <!-- LINUX -->
+            <div class="install-panel active" data-install-panel="linux">
+              <p class="install-note" style="margin-bottom: 12px;"><strong>1. Install prerequisites</strong> (Python, git, gcc &amp; Vulkan tools for game FPS):</p>
+              <div class="distro-pills" role="group" aria-label="Linux distribution">
+                <button class="distro-btn active" type="button" data-distro="arch">Arch / CachyOS</button>
+                <button class="distro-btn" type="button" data-distro="debian">Debian / Ubuntu</button>
+                <button class="distro-btn" type="button" data-distro="fedora">Fedora / Nobara</button>
+                <button class="distro-btn" type="button" data-distro="opensuse">openSUSE</button>
               </div>
-
               <div class="code-box">
-                <pre><code id="linux-deps-cmd">sudo pacman -S --needed git python gcc vulkan-icd-loader vulkan-tools</code></pre>
-                <button type="button" class="copy-btn" data-copy-target="linux-deps-cmd">Copy</button>
+                <pre><code id="distro-cmd">sudo pacman -S --needed git python gcc vulkan-icd-loader vulkan-tools</code></pre>
+                <button class="copy-btn" type="button" data-copy-target="distro-cmd">Copy</button>
               </div>
-              <p class="distro-note" id="linux-gpu-note">
-                For game FPS, ensure your GPU Vulkan driver is installed: <code>vulkan-radeon</code> (AMD), <code>vulkan-intel</code> (Intel), or <code>nvidia-utils</code> (NVIDIA).
-              </p>
-            </div>
 
-            <div class="step-block">
-              <h3>2. Clone &amp; run the installer</h3>
+              <p class="install-note" style="margin-bottom: 10px;"><strong>2. Clone &amp; run the installer</strong> (sets up venv, builds Vulkan FPS layer, adds autostart &amp; Plasma/GNOME widget):</p>
               <div class="code-box">
                 <pre><code id="linux-install-cmd">git clone https://github.com/danny19862025/prism-monitor.git
 cd prism-monitor
 ./Install-Linux.sh</code></pre>
-                <button type="button" class="copy-btn" data-copy-target="linux-install-cmd">Copy</button>
+                <button class="copy-btn" type="button" data-copy-target="linux-install-cmd">Copy</button>
               </div>
-              <p class="step-note">
-                Creates an isolated Python environment, compiles the Vulkan FPS layer, adds the app launcher, enables autostart, and installs KDE Plasma 6 / GNOME desktop widgets where detected. Safe to re-run for updates after <code>git pull</code>.
-              </p>
+              <p class="install-note">Updating later is just <code>git pull &amp;&amp; ./Install-Linux.sh</code>. Tested on Arch Linux with KDE Plasma 6 (Wayland).</p>
             </div>
 
-            <div class="step-block">
-              <h3>3. Enable Game FPS &amp; Desktop Widgets</h3>
-              <ul class="linux-tips">
-                <li><strong>Game FPS:</strong> Right-click the widget and enable <strong>Show FPS</strong>. Newly launched Vulkan &amp; Steam/Proton games are tracked automatically with no launch options.</li>
-                <li><strong>KDE Plasma 6:</strong> Right-click desktop &rarr; <em>Add or Manage Widgets</em> &rarr; search <strong>Prism Monitor</strong> and drag it onto your wallpaper.</li>
-                <li><strong>GNOME 45&ndash;49:</strong> Sign out and back in once after installing and the desktop widget appears cleanly behind your windows.</li>
-              </ul>
+            <!-- WINDOWS -->
+            <div class="install-panel" data-install-panel="windows">
+              <div class="win-downloads">
+                <div class="dl-card">
+                  <div>
+                    <h4>Windows Installer (Recommended)</h4>
+                    <p>Installs for your user account without admin prompt. Includes optional one-click CPU/fan sensor helper setup.</p>
+                  </div>
+                  <a class="btn btn-primary btn-sm" href="https://github.com/danny19862025/prism-monitor/releases/download/v1.1.0/PrismMonitor-Setup-1.1.0.exe">
+                    Download PrismMonitor-Setup-1.1.0.exe (21 MB)
+                  </a>
+                </div>
+                <div class="dl-card">
+                  <div>
+                    <h4>Portable ZIP</h4>
+                    <p>No installer needed. Extract anywhere and run <code>PrismMonitor\PrismMonitor.exe</code>.</p>
+                  </div>
+                  <a class="btn btn-secondary btn-sm" href="https://github.com/danny19862025/prism-monitor/releases/download/v1.1.0/PrismMonitor-windows.zip">
+                    Download PrismMonitor-windows.zip (27 MB)
+                  </a>
+                </div>
+              </div>
+
+              <div class="code-box">
+                <pre><code id="win-sha"><span class="code-comment"># SHA-256 Checksums (v1.1.0)</span>
+ec979fe888812175b2700983867ae80680af4489bdca8114c715759bad8b5d34  PrismMonitor-Setup-1.1.0.exe
+5aa896954a74e361d9a921d92d8881825733d8c315820c0bf1dfab92bbec9a93  PrismMonitor-windows.zip</code></pre>
+                <button class="copy-btn" type="button" data-copy-target="win-sha">Copy</button>
+              </div>
+              <p class="install-note">The installer is unsigned, so Windows SmartScreen may prompt—verify the SHA-256 above and click <strong>More info → Run anyway</strong>.</p>
+            </div>
+
+            <!-- BUILD FROM SOURCE -->
+            <div class="install-panel" data-install-panel="source">
+              <div class="code-box">
+                <pre><code id="src-cmd"><span class="code-comment"># Windows (Python 3.12–3.14 with py launcher)</span>
+Run-PrismMonitor.cmd      <span class="code-comment">:: set up and run from source</span>
+Build-Windows.cmd         <span class="code-comment">:: run tests and build dist\PrismMonitor-windows.zip</span>
+
+<span class="code-comment"># Run test suite on any platform</span>
+QT_QPA_PLATFORM=offscreen .venv/bin/python -m unittest discover -s tests -v</code></pre>
+                <button class="copy-btn" type="button" data-copy-target="src-cmd">Copy</button>
+              </div>
+              <p class="install-note">When Inno Setup 6 is installed (<code>winget install JRSoftware.InnoSetup</code>), <code>Build-Windows.cmd</code> also produces the signed-ready setup executable.</p>
             </div>
           </div>
-
-          <!-- Source Panel -->
-          <div class="os-panel" id="panel-source" role="tabpanel" aria-labelledby="tab-source" hidden>
-            <div class="source-grid">
-              <div class="step-block">
-                <h3>Run or package on Windows (Python 3.12&ndash;3.14)</h3>
-                <div class="code-box">
-                  <pre><code id="src-win-cmd">git clone https://github.com/danny19862025/prism-monitor.git
-cd prism-monitor
-Run-PrismMonitor.cmd      :: set up venv and run from source
-Build-Windows.cmd         :: run tests and build dist\PrismMonitor-windows.zip</code></pre>
-                  <button type="button" class="copy-btn" data-copy-target="src-win-cmd">Copy</button>
-                </div>
-                <p class="step-note">
-                  With <a href="https://jrsoftware.org/isinfo.php" target="_blank" rel="noopener noreferrer">Inno Setup 6</a> installed (<code>winget install JRSoftware.InnoSetup</code>), the build script also generates <code>dist\PrismMonitor-Setup-&lt;version&gt;.exe</code>.
-                </p>
-              </div>
-
-              <div class="step-block">
-                <h3>Run the test suite (any platform)</h3>
-                <div class="code-box">
-                  <pre><code id="src-test-cmd">QT_QPA_PLATFORM=offscreen .venv/bin/python -m unittest discover -s tests -v</code></pre>
-                  <button type="button" class="copy-btn" data-copy-target="src-test-cmd">Copy</button>
-                </div>
-                <p class="step-note">
-                  Dive deeper into settings, sensor helper architecture, and troubleshooting in the <a href="https://github.com/danny19862025/prism-monitor/blob/main/docs/GUIDE.md" target="_blank" rel="noopener noreferrer">full documentation guide</a>.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Privacy & Safety Section -->
-    <section class="section" id="privacy">
-      <div class="container">
-        <div class="section-head reveal">
-          <span class="eyebrow">PRIVACY &amp; SAFETY</span>
-          <h2>Transparent, local-only, and strictly read-only.</h2>
-          <p>Hardware monitoring tools run close to your system. Prism Monitor is engineered so you can verify every boundary.</p>
-        </div>
-
-        <div class="privacy-grid">
-          <article class="privacy-card reveal">
-            <h3>Local-only by design</h3>
-            <p>Everything stays on your PC. Prism Monitor contains zero analytics, ads, or background tracking. Its only network request goes to GitHub when you explicitly click <strong>Check for updates</strong>.</p>
-          </article>
-
-          <article class="privacy-card reveal">
-            <h3>Strictly read-only sensors</h3>
-            <p>Prism Monitor never alters fan curves, voltages, or clock speeds, and never installs kernel drivers. On Windows it uses LibreHardwareMonitorLib (and PawnIO if you choose to install it); on Linux it reads standard kernel sysfs/hwmon.</p>
-          </article>
-
-          <article class="privacy-card reveal">
-            <h3>Sandboxed privilege separation</h3>
-            <p>The desktop widget runs unprivileged. On Windows, optional elevated sensor reading lives in a small C# helper copied to protected <code>Program Files</code>, serving JSON over a user-scoped named pipe with no network access.</p>
-          </article>
         </div>
       </div>
     </section>
   </main>
 
-  <!-- Footer -->
-  <footer class="site-footer">
+  <!-- ========================================================================
+       FOOTER
+       ======================================================================== -->
+  <footer>
     <div class="container footer-inner">
-      <div class="footer-brand">
-        <div class="brand">
-          <span class="brand-icon" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <rect x="3" y="12" width="3" height="8" rx="1" fill="#8cd0fb"/>
-              <rect x="8" y="7" width="3" height="13" rx="1" fill="#8cd0fb"/>
-              <rect x="13" y="4" width="3" height="16" rx="1" fill="#e6f2fa"/>
-              <rect x="18" y="9" width="3" height="11" rx="1" fill="#f2c15a"/>
-            </svg>
-          </span>
-          <span class="brand-name">PRISM MONITOR</span>
-        </div>
-        <p class="footer-tagline">
-          Free &amp; open-source desktop telemetry widget for Windows and Linux.
-        </p>
+      <div class="footer-left">
+        <span>Built by <a href="https://github.com/danny19862025" target="_blank" rel="noreferrer" style="color:var(--text); font-weight:600;">Danny</a></span>
+        <span class="license-badge">GPL-3.0</span>
+        <span style="color:var(--text-faint)">Free, open-source &amp; zero tracking.</span>
       </div>
-
       <div class="footer-links">
-        <a href="https://github.com/danny19862025/prism-monitor" target="_blank" rel="noopener noreferrer">GitHub Repo</a>
-        <a href="https://github.com/danny19862025/prism-monitor/releases/latest" target="_blank" rel="noopener noreferrer">Latest Release</a>
-        <a href="https://github.com/danny19862025/prism-monitor/blob/main/docs/GUIDE.md" target="_blank" rel="noopener noreferrer">User Guide</a>
-        <a href="https://github.com/danny19862025/prism-monitor/issues" target="_blank" rel="noopener noreferrer">Issues</a>
-        <a href="https://github.com/danny19862025/prism-monitor/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">GPL-3.0 License</a>
-        <a class="coffee-link" href="https://buymeacoffee.com/danny1986" target="_blank" rel="noopener noreferrer">Buy Me a Coffee &#9749;</a>
+        <a href="https://github.com/danny19862025/prism-monitor" target="_blank" rel="noreferrer">GitHub</a>
+        <a href="https://github.com/danny19862025/prism-monitor/releases" target="_blank" rel="noreferrer">Releases</a>
+        <a href="https://github.com/danny19862025/prism-monitor/issues" target="_blank" rel="noreferrer">Issues</a>
+        <a href="https://github.com/danny19862025/prism-monitor/blob/main/docs/GUIDE.md" target="_blank" rel="noreferrer">Guide</a>
+        <a href="https://buymeacoffee.com/danny1986" target="_blank" rel="noreferrer">Buy Me a Coffee</a>
       </div>
-    </div>
-
-    <div class="container footer-bottom">
-      <p>
-        Bundled components: LibreHardwareMonitorLib (MPL-2.0), Intel PresentMon (MIT), Qt / PySide6 (LGPL-3.0 / GPL), Python (PSF), Barlow font (OFL).
-        See <a href="https://github.com/danny19862025/prism-monitor/blob/main/THIRD_PARTY_NOTICES.md" target="_blank" rel="noopener noreferrer">THIRD_PARTY_NOTICES.md</a>.
-      </p>
     </div>
   </footer>
 
-  <script src="script.js"></script>
+  <!-- ========================================================================
+       VANILLA JS (Zero Dependencies)
+       ======================================================================== -->
+  <script>
+    (function () {
+      const root = document.documentElement;
+
+      /* 1. Interactive Theme Switcher */
+      const savedTheme = localStorage.getItem("prism-theme");
+      if (savedTheme) applyTheme(savedTheme);
+
+      function applyTheme(theme) {
+        root.setAttribute("data-theme", theme);
+        localStorage.setItem("prism-theme", theme);
+        document.querySelectorAll("[data-set-theme]").forEach((btn) => {
+          btn.classList.toggle("active", btn.dataset.setTheme === theme);
+        });
+      }
+
+      document.querySelectorAll("[data-set-theme]").forEach((btn) => {
+        btn.addEventListener("click", () => applyTheme(btn.dataset.setTheme));
+      });
+
+      /* 2. Hero Showcase Tabs */
+      document.querySelectorAll(".showcase-tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          const target = tab.dataset.tab;
+          document.querySelectorAll(".showcase-tab").forEach((t) => {
+            const active = t.dataset.tab === target;
+            t.classList.toggle("active", active);
+            t.setAttribute("aria-selected", String(active));
+          });
+          document.querySelectorAll(".showcase-pane").forEach((pane) => {
+            pane.classList.toggle("active", pane.dataset.pane === target);
+          });
+        });
+      });
+
+      /* 3. Install Tabs */
+      document.querySelectorAll(".install-tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          const target = tab.dataset.install;
+          document.querySelectorAll(".install-tab").forEach((t) => {
+            const active = t.dataset.install === target;
+            t.classList.toggle("active", active);
+            t.setAttribute("aria-selected", String(active));
+          });
+          document.querySelectorAll(".install-panel").forEach((panel) => {
+            panel.classList.toggle("active", panel.dataset.installPanel === target);
+          });
+        });
+      });
+
+      /* 4. Linux Distro Prerequisite Switcher */
+      const distroCommands = {
+        arch: "sudo pacman -S --needed git python gcc vulkan-icd-loader vulkan-tools",
+        debian: "sudo apt install git python3 python3-venv gcc libvulkan1 vulkan-tools",
+        fedora: "sudo dnf install git python3 gcc vulkan-loader vulkan-tools",
+        opensuse: "sudo zypper install git python3 gcc libvulkan1 vulkan-tools"
+      };
+      const distroCodeEl = document.getElementById("distro-cmd");
+      document.querySelectorAll(".distro-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const key = btn.dataset.distro;
+          document.querySelectorAll(".distro-btn").forEach((b) => b.classList.toggle("active", b === btn));
+          if (distroCodeEl && distroCommands[key]) distroCodeEl.textContent = distroCommands[key];
+        });
+      });
+
+      /* 5. One-Click Copy Buttons */
+      document.querySelectorAll("[data-copy-target]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const el = document.getElementById(btn.dataset.copyTarget);
+          if (!el) return;
+          const text = el.innerText.trim();
+          try {
+            await navigator.clipboard.writeText(text);
+            const orig = btn.textContent;
+            btn.textContent = "Copied!";
+            btn.classList.add("copied");
+            setTimeout(() => {
+              btn.textContent = orig;
+              btn.classList.remove("copied");
+            }, 1600);
+          } catch (_) {
+            btn.textContent = "Select & Copy";
+          }
+        });
+      });
+
+      /* 6. Live GitHub Star Count (graceful fallback if offline/rate-limited) */
+      fetch("https://api.github.com/repos/danny19862025/prism-monitor")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (data && typeof data.stargazers_count === "number") {
+            const el = document.getElementById("gh-stars");
+            if (el) el.textContent = String(data.stargazers_count);
+          }
+        })
+        .catch(() => {});
+
+      /* 7. Subtle Live Telemetry Simulation for Hero Showcase */
+      const bigTemp = document.getElementById("sim-big-temp");
+      const cpuTemp = document.getElementById("sim-cpu-temp");
+      const cpuMeta = document.getElementById("sim-cpu-meta");
+      const simFans = document.getElementById("sim-fans");
+      const bigFps = document.getElementById("sim-big-fps");
+      const fpsVal = document.getElementById("sim-fps-val");
+
+      let tick = 0;
+      setInterval(() => {
+        tick++;
+        const temp = 52 + ((tick * 3) % 5);
+        const load = 21 + ((tick * 7) % 9);
+        const watts = 58 + ((tick * 5) % 8);
+        const rpm = 1105 + ((tick * 13) % 35);
+        const fps = 141 + ((tick * 5) % 7);
+
+        if (bigTemp) bigTemp.textContent = String(temp);
+        if (cpuTemp) cpuTemp.textContent = temp + "°";
+        if (cpuMeta) cpuMeta.textContent = `${load}% • 4.8 GHz • ${watts}W`;
+        if (simFans) simFans.textContent = `CPU ${rpm} • Case 860 RPM`;
+        if (bigFps) bigFps.textContent = String(fps);
+        if (fpsVal) fpsVal.textContent = String(fps);
+      }, 2200);
+
+      /* 8. Smooth Scroll Reveal (IntersectionObserver, progressive enhancement) */
+      if ("IntersectionObserver" in window) {
+        root.classList.add("js-reveal");
+
+        const revealGroups = [
+          { selector: ".showcase-shell", stagger: 0 },
+          { selector: ".section-head", stagger: 0 },
+          { selector: ".bench-card", stagger: 0 },
+          { selector: ".metric-tile", stagger: 70 },
+          { selector: ".bento-card", stagger: 65 },
+          { selector: ".matrix-wrap", stagger: 0 },
+          { selector: ".install-shell", stagger: 0 },
+          { selector: "footer", stagger: 0 }
+        ];
+
+        const targets = [];
+        revealGroups.forEach(({ selector, stagger }) => {
+          document.querySelectorAll(selector).forEach((el, idx) => {
+            el.classList.add("reveal");
+            if (stagger > 0) {
+              el.style.setProperty("--reveal-delay", `${idx * stagger}ms`);
+            }
+            targets.push(el);
+          });
+        });
+
+        const io = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add("is-visible");
+                io.unobserve(entry.target);
+              }
+            });
+          },
+          { threshold: 0.12, rootMargin: "0px 0px -36px 0px" }
+        );
+
+        targets.forEach((el) => io.observe(el));
+      }
+    })();
+  </script>
 </body>
 </html>
